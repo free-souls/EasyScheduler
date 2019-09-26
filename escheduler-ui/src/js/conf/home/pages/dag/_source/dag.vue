@@ -1,14 +1,14 @@
 <template>
   <div class="clearfix dag-model" >
     <div class="toolbar">
-      <div class="title"><span>{{$t('工具栏')}}</span></div>
+      <div class="title"><span>{{$t('Toolbar')}}</span></div>
       <div class="toolbar-btn">
         <div class="bar-box roundedRect jtk-draggable jtk-droppable jtk-endpoint-anchor jtk-connected"
              :class="v === dagBarId ? 'active' : ''"
              :id="v"
              v-for="(item,v) in tasksTypeList"
              @mousedown="_getDagId(v)">
-          <div data-toggle="tooltip" :title="item.desc" :class="_isDetails">
+          <div data-toggle="tooltip" :title="item.desc">
             <div class="icos" :class="'icos-' + v" ></div>
           </div>
         </div>
@@ -20,7 +20,7 @@
           <x-button
                   style="vertical-align: middle;"
                   data-toggle="tooltip"
-                  :title="$t('查看变量')"
+                  :title="$t('View variables')"
                   data-container="body"
                   type="primary"
                   size="xsmall"
@@ -28,7 +28,20 @@
                   @click="_toggleView"
                   icon="fa fa-code">
           </x-button>
+          <x-button
+            style="vertical-align: middle;"
+            data-toggle="tooltip"
+            :title="$t('Startup parameter')"
+            data-container="body"
+            type="primary"
+            size="xsmall"
+            :disabled="$route.name !== 'projects-instance-details'"
+            @click="_toggleParam"
+            icon="fa fa-chevron-circle-right">
+          </x-button>
           <span class="name">{{name}}</span>
+          &nbsp;
+          <span v-if="name"  class="copy-name" @click="_copyName" :data-clipboard-text="name"><i class="iconfont" data-container="body"  data-toggle="tooltip" title="复制名称" >&#xe61e;</i></span>
         </div>
         <div class="save-btn">
           <div class="operation" style="vertical-align: middle;">
@@ -42,7 +55,7 @@
           </div>
           <x-button
                   data-toggle="tooltip"
-                  :title="$t('刷新DAG状态')"
+                  :title="$t('Refresh DAG status')"
                   data-container="body"
                   style="vertical-align: middle;"
                   icon="fa fa-refresh"
@@ -59,18 +72,17 @@
                   size="xsmall"
                   icon="fa fa-reply"
                   @click="_rtNodesDag" >
-            {{$t('返回上一节点')}}
+            {{$t('Return_1')}}
           </x-button>
           <x-button
                   style="vertical-align: middle;"
                   type="primary"
                   size="xsmall"
                   :loading="spinnerLoading"
-                  v-ps="['GENERAL_USER']"
                   @click="_saveChart"
                   icon="fa fa-save"
-                  :disabled="isDetails">
-            {{spinnerLoading ? 'Loading...' : $t('保存')}}
+                  >
+            {{spinnerLoading ? 'Loading...' : $t('Save')}}
           </x-button>
         </div>
       </div>
@@ -88,6 +100,7 @@
   import mUdp from './udp/udp'
   import i18n from '@/module/i18n'
   import { jsPlumb } from 'jsplumb'
+  import Clipboard from 'clipboard'
   import { allNodesId } from './plugIn/util'
   import { toolOper, tasksType } from './config'
   import mFormModel from './formModel/formModel'
@@ -140,6 +153,23 @@
         }
       },
       /**
+       * copy name
+       */
+      _copyName(){
+        let clipboard = new Clipboard(`.copy-name`)
+        clipboard.on('success', e => {
+          this.$message.success(`${i18n.$t('Copy success')}`)
+          // Free memory
+          clipboard.destroy()
+        })
+        clipboard.on('error', e => {
+          // Copy is not supported
+          this.$message.warning(`${i18n.$t('The browser does not support automatic copying')}`)
+          // Free memory
+          clipboard.destroy()
+        })
+      },
+      /**
        * Get state interface
        * @param isReset Whether to manually refresh
        */
@@ -152,8 +182,12 @@
             let idArr = allNodesId()
             const titleTpl = (item, desc) => {
               let $item = _.filter(taskList, v => v.name === item.name)[0]
-              return `<div style="text-align: left">${i18n.$t('名称')}：${$item.name}</br>${i18n.$t('状态')}：${desc}</br>${i18n.$t('类型')}：${$item.taskType}</br>${i18n.$t('host')}：${$item.host || '-'}</br>${i18n.$t('重试次数')}：${$item.retryTimes}</br>${i18n.$t('提交时间')}：${formatDate($item.submitTime)}</br>${i18n.$t('开始时间')}：${formatDate($item.startTime)}</br>${i18n.$t('结束时间')}：${$item.endTime ? formatDate($item.endTime) : '-'}</br></div>`
+              return `<div style="text-align: left">${i18n.$t('Name')}：${$item.name}</br>${i18n.$t('State')}：${desc}</br>${i18n.$t('type')}：${$item.taskType}</br>${i18n.$t('host')}：${$item.host || '-'}</br>${i18n.$t('Retry Count')}：${$item.retryTimes}</br>${i18n.$t('Submit Time')}：${formatDate($item.submitTime)}</br>${i18n.$t('Start Time')}：${formatDate($item.startTime)}</br>${i18n.$t('End Time')}：${$item.endTime ? formatDate($item.endTime) : '-'}</br></div>`
             }
+
+            // remove tip state dom
+            $('.w').find('.state-p').html('')
+
             data.forEach(v1 => {
               idArr.forEach(v2 => {
                 if (v2.name === v1.name) {
@@ -161,7 +195,6 @@
                   let state = dom.find('.state-p')
                   dom.attr('data-state-id', v1.stateId)
                   dom.attr('data-dependent-result', v1.dependentResult || '')
-                  state.html('')
                   state.append(`<b class="iconfont ${v1.isSpin ? 'fa fa-spin' : ''}" style="color:${v1.color}" data-toggle="tooltip" data-html="true" data-container="body">${v1.icoUnicode}</b>`)
                   state.find('b').attr('title', titleTpl(v2, v1.desc))
                 }
@@ -182,9 +215,9 @@
        * @param item
        */
       _getDagId (v) {
-        if (this.isDetails) {
-          return
-        }
+        // if (this.isDetails) {
+        //   return
+        // }
         this.dagBarId = v
       },
       /**
@@ -216,11 +249,12 @@
         })
       },
       _operationClass (item) {
-        if (item.disable) {
-          return this.toolOperCode === item.code ? 'active' : ''
-        } else {
-          return 'disable'
-        }
+        return this.toolOperCode === item.code ? 'active' : ''
+        // if (item.disable) {
+        //   return this.toolOperCode === item.code ? 'active' : ''
+        // } else {
+        //   return 'disable'
+        // }
       },
       /**
        * Storage interface
@@ -232,7 +266,7 @@
           Dag.saveStore().then(res => {
             if (this.urlParam.id) {
               /**
-               * 编辑
+               * Edit
                * @param saveInstanceEditDAGChart => Process instance editing
                * @param saveEditDAGChart => Process definition editing
                */
@@ -300,7 +334,7 @@
       _saveChart () {
         // Verify node
         if (!this.tasks.length) {
-          this.$message.warning(`${i18n.$t('未创建节点保存失败')}`)
+          this.$message.warning(`${i18n.$t('Failed to create node to save')}`)
           return
         }
 
@@ -350,7 +384,7 @@
         this._getTaskState(false).then(res => {
           setTimeout(() => {
             this.isRefresh = false
-            this.$message.success(`${i18n.$t('刷新状态成功')}`)
+            this.$message.success(`${i18n.$t('Refresh status succeeded')}`)
           }, 2200)
         })
       },
@@ -359,6 +393,13 @@
        */
       _toggleView () {
         findComponentDownward(this.$root, `assist-dag-index`)._toggleView()
+      },
+
+      /**
+       * Starting parameters
+       */
+      _toggleParam () {
+        findComponentDownward(this.$root, `starting-params-dag-index`)._toggleParam()
       },
       /**
        * Create a node popup layer
@@ -417,8 +458,8 @@
     watch: {
       'tasks': {
         deep: true,
-        handler () {
-          console.log('+++++ save dag params +++++')
+        handler (o) {
+
           // Edit state does not allow deletion of node a...
           this.setIsEditDag(true)
         }
@@ -474,5 +515,5 @@
 </script>
 
 <style lang="scss" rel="stylesheet/scss">
-  @import "dag";
+  @import "./dag";
 </style>

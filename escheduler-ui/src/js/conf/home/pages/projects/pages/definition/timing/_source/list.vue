@@ -9,34 +9,34 @@
           <table>
             <tr>
               <th>
-                <span>{{$t('编号')}}</span>
+                <span>{{$t('#')}}</span>
               </th>
               <th>
-                <span>{{$t('流程名称')}}</span>
+                <span>{{$t('Process Name')}}</span>
               </th>
               <th>
-                <span>{{$t('开始时间')}}</span>
+                <span>{{$t('Start Time')}}</span>
               </th>
               <th>
-                <span>{{$t('结束时间')}}</span>
+                <span>{{$t('End Time')}}</span>
               </th>
               <th>
                 <span>{{$t('crontab')}}</span>
               </th>
               <th>
-                <span>{{$t('失败策略')}}</span>
+                <span>{{$t('Failure Strategy')}}</span>
               </th>
               <th>
-                <span>{{$t('状态')}}</span>
+                <span>{{$t('State')}}</span>
               </th>
               <th>
-                <span>{{$t('创建时间')}}</span>
+                <span>{{$t('Create Time')}}</span>
               </th>
               <th>
-                <span>{{$t('更新时间')}}</span>
+                <span>{{$t('Update Time')}}</span>
               </th>
-              <th width="80">
-                <span>{{$t('操作')}}</span>
+              <th width="120">
+                <span>{{$t('Operation')}}</span>
               </th>
             </tr>
             <tr v-for="(item, $index) in list" :key="item.id">
@@ -73,31 +73,53 @@
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('编辑')"
+                        :title="$t('Edit')"
                         @click="_editTiming(item)"
                         icon="iconfont icon-bianji"
                         :disabled="item.releaseState === 'ONLINE'" >
-                </x-button>
-                <x-button
-                        type="success"
-                        shape="circle"
-                        size="xsmall"
-                        data-toggle="tooltip"
-                        :title="$t('上线')"
-                        @click="_online(item)"
-                        icon="iconfont icon-erji-xiaxianjilu-copy"
-                        v-if="item.releaseState === 'OFFLINE'">
                 </x-button>
                 <x-button
                         type="warning"
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('下线')"
+                        :title="$t('online')"
+                        @click="_online(item)"
+                        icon="iconfont icon-erji-xiaxianjilu-copy"
+                        v-if="item.releaseState === 'OFFLINE'">
+                </x-button>
+                <x-button
+                        type="error"
+                        shape="circle"
+                        size="xsmall"
+                        data-toggle="tooltip"
+                        :title="$t('offline')"
                         icon="iconfont icon-erji-xiaxianjilu"
                         @click="_offline(item)"
                         v-if="item.releaseState === 'ONLINE'">
                 </x-button>
+                <x-poptip
+                        :ref="'poptip-delete-' + $index"
+                        placement="bottom-end"
+                        width="90">
+                  <p>{{$t('Delete?')}}</p>
+                  <div style="text-align: right; margin: 0;padding-top: 4px;">
+                    <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('Cancel')}}</x-button>
+                    <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('Confirm')}}</x-button>
+                  </div>
+                  <template slot="reference">
+                    <x-button
+                            icon="iconfont icon-shanchu"
+                            type="error"
+                            shape="circle"
+                            size="xsmall"
+                            :disabled="item.releaseState === 'ONLINE'"
+                            data-toggle="tooltip"
+                            :title="$t('delete')"
+                            v-ps="['GENERAL_USER']">
+                    </x-button>
+                  </template>
+                </x-poptip>
               </td>
             </tr>
           </table>
@@ -116,7 +138,6 @@
 <script>
   import _ from 'lodash'
   import { mapActions } from 'vuex'
-  import '@/module/filter/formatDate'
   import mSpin from '@/module/components/spin/spin'
   import mTiming from '../../pages/list/_source/timing'
   import mNoData from '@/module/components/noData/noData'
@@ -136,7 +157,28 @@
     props: {
     },
     methods: {
-      ...mapActions('dag', ['getScheduleList', 'scheduleOffline', 'scheduleOnline', 'getReceiver']),
+      ...mapActions('dag', ['getScheduleList', 'scheduleOffline', 'scheduleOnline', 'getReceiver','deleteTiming']),
+      /**
+       * delete
+       */
+      _delete (item, i) {
+        this.deleteTiming({
+          scheduleId: item.id
+        }).then(res => {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+          this.$message.success(res.msg)
+          this.$router.push({ name: 'projects-definition-list' })
+        }).catch(e => {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+          this.$message.error(e.msg || '')
+        })
+      },
+      /**
+       * Close the delete layer
+       */
+      _closeDelete (i) {
+        this.$refs[`poptip-delete-${i}`][0].doClose()
+      },
       /**
        * return state
        */
@@ -161,7 +203,10 @@
           pageNo: this.pageNo,
           pageSize: this.pageSize
         }).then(res => {
-          this.list = res.data.totalList
+          this.list = []
+          setTimeout(() => {
+            this.list = res.data.totalList
+          })
           this.total = res.data.total
           this.isLoading = false
         }).catch(e => {

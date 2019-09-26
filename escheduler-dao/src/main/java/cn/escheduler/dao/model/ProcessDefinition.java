@@ -136,6 +136,16 @@ public class ProcessDefinition {
      */
     private ReleaseState scheduleReleaseState;
 
+    /**
+     * process warning time out. unit: minute
+     */
+    private int timeout;
+
+    /**
+     * tenant id
+     */
+    private int tenantId;
+
 
     public String getName() {
         return name;
@@ -316,6 +326,14 @@ public class ProcessDefinition {
         this.scheduleReleaseState = scheduleReleaseState;
     }
 
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
     @Override
     public String toString() {
         return "ProcessDefinition{" +
@@ -340,6 +358,16 @@ public class ProcessDefinition {
                 ", receivers='" + receivers + '\'' +
                 ", receiversCc='" + receiversCc + '\'' +
                 ", scheduleReleaseState=" + scheduleReleaseState +
+                ", timeout=" + timeout +
+                ", tenantId=" + tenantId +
                 '}';
+    }
+
+    public int getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(int tenantId) {
+        this.tenantId = tenantId;
     }
 }

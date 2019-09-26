@@ -20,7 +20,7 @@ import cn.escheduler.api.enums.Status;
 import cn.escheduler.api.utils.Constants;
 import cn.escheduler.dao.mapper.MasterServerMapper;
 import cn.escheduler.dao.mapper.WorkerServerMapper;
-import cn.escheduler.dao.model.MasterServer;
+import cn.escheduler.common.model.MasterServer;
 import cn.escheduler.dao.model.User;
 import cn.escheduler.dao.model.WorkerServer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,9 +52,6 @@ public class ServerService extends BaseService{
     public Map<String,Object> queryMaster(User loginUser) {
 
         Map<String, Object> result = new HashMap<>(5);
-        if (checkAdmin(loginUser, result)){
-            return result;
-        }
 
         List<MasterServer> masterList = masterServerMapper.queryAllMaster();
         result.put(Constants.DATA_LIST, masterList);
@@ -71,9 +68,6 @@ public class ServerService extends BaseService{
      */
     public Map<String,Object> queryWorker(User loginUser) {
         Map<String, Object> result = new HashMap<>();
-        if (checkAdmin(loginUser, result)){
-            return result;
-        }
 
         List<WorkerServer> workerList = workerServerMapper.queryAllWorker();
         result.put(Constants.DATA_LIST, workerList);

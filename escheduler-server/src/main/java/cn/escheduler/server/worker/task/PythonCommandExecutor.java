@@ -16,12 +16,13 @@
  */
 package cn.escheduler.server.worker.task;
 
+import cn.escheduler.common.Constants;
 import cn.escheduler.common.utils.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -34,14 +35,22 @@ import java.util.function.Consumer;
  */
 public class PythonCommandExecutor extends AbstractCommandExecutor {
 
+    private static final Logger logger = LoggerFactory.getLogger(PythonCommandExecutor.class);
+
     public static final String PYTHON = "python";
 
 
 
     public PythonCommandExecutor(Consumer<List<String>> logHandler,
-                                 String taskDir, String taskAppId, String tenantCode, String envFile,
-                                 Date startTime, int timeout, Logger logger) {
-        super(logHandler,taskDir,taskAppId, tenantCode, envFile, startTime, timeout, logger);
+                                 String taskDir,
+                                 String taskAppId,
+                                 int taskInstId,
+                                 String tenantCode,
+                                 String envFile,
+                                 Date startTime,
+                                 int timeout,
+                                 Logger logger) {
+        super(logHandler,taskDir,taskAppId,taskInstId,tenantCode, envFile, startTime, timeout, logger);
     }
 
 
@@ -63,50 +72,87 @@ public class PythonCommandExecutor extends AbstractCommandExecutor {
      */
     @Override
     protected void createCommandFileIfNotExists(String execCommand, String commandFile) throws IOException {
-        logger.info("proxy user:{}, work dir:{}", tenantCode, taskDir);
+        logger.info("tenantCode :{}, task dir:{}", tenantCode, taskDir);
 
         if (!Files.exists(Paths.get(commandFile))) {
             logger.info("generate command file:{}", commandFile);
 
-            StringBuilder sb = new StringBuilder(200);
+            StringBuilder sb = new StringBuilder();
             sb.append("#-*- encoding=utf8 -*-\n");
-            sb.append("import os,sys\n");
-            sb.append("BASEDIR = os.path.dirname(os.path.realpath(__file__))\n");
-            sb.append("os.chdir(BASEDIR)\n");
-
-            if (StringUtils.isNotEmpty(envFile)) {
-                String[] envArray = envFile.split("\\.");
-                if(envArray.length == 2){
-                    String path = envArray[0];
-                    logger.info("path:"+path);
-                    int index =  path.lastIndexOf("/");
-                    sb.append(String.format("sys.path.append('%s')\n",path.substring(0,index)));
-                    sb.append(String.format("import %s\n",path.substring(index+1)));
-                }
-            }
 
             sb.append("\n\n");
-            sb.append(String.format("import py_%s_node\n",taskAppId));
+            sb.append(execCommand);
             logger.info(sb.toString());
 
             // write data to file
-            FileUtils.writeStringToFile(new File(commandFile), sb.toString(), StandardCharsets.UTF_8);
+            FileUtils.writeStringToFile(new File(commandFile),
+                    sb.toString(),
+                    StandardCharsets.UTF_8);
         }
     }
 
     @Override
     protected String commandType() {
-        return PYTHON;
-    }
-
-    @Override
-    protected boolean checkShowLog(String line) {
-        return true;
+        String pythonHome = getPythonHome(envFile);
+        if (StringUtils.isEmpty(pythonHome)){
+            return PYTHON;
+        }
+        return pythonHome;
     }
 
     @Override
     protected boolean checkFindApp(String line) {
         return true;
+    }
+
+
+    /**
+     *  get the absolute path of the Python command
+     *  note :
+     *  common.properties
+     *  PYTHON_HOME configured under common.properties is Python absolute path, not PYTHON_HOME itself
+     *
+     *  for example :
+     *  your PYTHON_HOM is /opt/python3.7/
+     *  you must set PYTHON_HOME is /opt/python3.7/python under nder common.properties
+     *  escheduler.env.path file.
+     *
+     * @param envPath
+     * @return
+     */
+    private static String getPythonHome(String envPath){
+        BufferedReader br = null;
+        StringBuilder sb = new StringBuilder();
+        try {
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(envPath)));
+            String line;
+            while ((line = br.readLine()) != null){
+                if (line.contains(Constants.PYTHON_HOME)){
+                    sb.append(line);
+                    break;
+                }
+            }
+            String result = sb.toString();
+            if (org.apache.commons.lang.StringUtils.isEmpty(result)){
+                return null;
+            }
+            String[] arrs = result.split(Constants.EQUAL_SIGN);
+            if (arrs.length == 2){
+                return arrs[1];
+            }
+
+        }catch (IOException e){
+            logger.error("read file failure",e);
+        }finally {
+            try {
+                if (br != null){
+                    br.close();
+                }
+            } catch (IOException e) {
+                logger.error(e.getMessage(),e);
+            }
+        }
+        return null;
     }
 
 }

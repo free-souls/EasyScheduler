@@ -2,29 +2,50 @@
   <div class="udp-model">
     <div class="scrollbar contpi-boxt">
       <div class="title">
-        <span>{{$t('设置DAG图名称')}}</span>
+        <span>{{$t('Set the DAG diagram name')}}</span>
       </div>
+
       <div>
         <x-input
                 type="text"
                 v-model="name"
                 :disabled="router.history.current.name === 'projects-instance-details'"
-                :placeholder="$t('请输入name(必填)')">
+                :placeholder="$t('Please enter name(required)')">
         </x-input>
       </div>
+
       <template v-if="router.history.current.name !== 'projects-instance-details'">
         <div style="padding-top: 12px;">
           <x-input
                   type="textarea"
                   v-model="desc"
                   :autosize="{minRows:2}"
-                  :placeholder="$t('请输入desc(选填)')"
+                  :placeholder="$t('Please enter description(optional)')"
                   autocomplete="off">
           </x-input>
         </div>
       </template>
+
       <div class="title" style="padding-top: 6px;">
-        <span>{{$t('设置全局')}}</span>
+        <span class="text-b">{{$t('select tenant')}}</span>
+        <form-tenant v-model="tenantId"></form-tenant>
+      </div>
+      <div class="title" style="padding-top: 6px;">
+        <span class="text-b">{{$t('warning of timeout')}}</span>
+        <span style="padding-left: 6px;">
+          <x-switch v-model="checkedTimeout"></x-switch>
+        </span>
+      </div>
+      <div class="content" style="padding-bottom: 10px;" v-if="checkedTimeout">
+        <span>
+          <x-input v-model="timeout" style="width: 160px;" maxlength="9">
+            <span slot="append">{{$t('Minute')}}</span>
+          </x-input>
+        </span>
+      </div>
+
+      <div class="title" style="padding-top: 6px;">
+        <span>{{$t('Set global')}}</span>
       </div>
       <div class="content">
         <div>
@@ -41,11 +62,11 @@
       <div class="submit">
         <template v-if="router.history.current.name === 'projects-instance-details'">
           <div class="lint-pt">
-            <x-checkbox v-model="syncDefine">{{$t('是否更新流程定义')}}</x-checkbox>
+            <x-checkbox v-model="syncDefine">{{$t('Whether to update the process definition')}}</x-checkbox>
           </div>
         </template>
-        <x-button type="text" @click="close()"> {{$t('取消')}} </x-button>
-        <x-button type="primary" shape="circle" @click="ok()" v-ps="['GENERAL_USER']" >{{$t('添加')}}</x-button>
+        <x-button type="text" @click="close()"> {{$t('Cancel')}} </x-button>
+        <x-button type="primary" shape="circle" @click="ok()">{{$t('Add')}}</x-button>
       </div>
     </div>
   </div>
@@ -56,6 +77,7 @@
   import mLocalParams from '../formModel/tasks/_source/localParams'
   import disabledState from '@/module/mixin/disabledState'
   import Affirm from '../jumpAffirm'
+  import FormTenant from "./_source/selectTenant";
 
   export default {
     name: 'udp',
@@ -67,8 +89,16 @@
         desc: '',
         // Global custom parameters
         udpList: [],
+        // Global custom parameters
+        udpListCache: [],
         // Whether to update the process definition
-        syncDefine: true
+        syncDefine: true,
+        // Timeout alarm
+        timeout: 0,
+
+        tenantId: -1,
+        // checked Timeout alarm
+        checkedTimeout: true
       }
     },
     mixins: [disabledState],
@@ -81,12 +111,28 @@
       _onLocalParams (a) {
         this.udpList = a
       },
+      _verifTimeout () {
+        const reg = /^[1-9]\d*$/
+        if (!reg.test(this.timeout)) {
+          this.$message.warning(`${i18n.$t('Please enter a positive integer greater than 0')}`)
+          return false
+        }
+        return true
+      },
+      _accuStore(){
+        this.store.commit('dag/setGlobalParams', _.cloneDeep(this.udpList))
+        this.store.commit('dag/setName', _.cloneDeep(this.name))
+        this.store.commit('dag/setTimeout', _.cloneDeep(this.timeout))
+        this.store.commit('dag/setTenantId', _.cloneDeep(this.tenantId))
+        this.store.commit('dag/setDesc', _.cloneDeep(this.desc))
+        this.store.commit('dag/setSyncDefine', this.syncDefine)
+      },
       /**
        * submit
        */
       ok () {
         if (!this.name) {
-          this.$message.warning(`${i18n.$t('DAG图名称不能为空')}`)
+          this.$message.warning(`${i18n.$t('DAG graph name cannot be empty')}`)
           return
         }
 
@@ -95,11 +141,14 @@
           if (!this.$refs.refLocalParams._verifProp()) {
             return
           }
+          // verification timeout
+          if (this.checkedTimeout && !this._verifTimeout()) {
+            return
+          }
+
           // Storage global globalParams
-          this.store.commit('dag/setGlobalParams', _.cloneDeep(this.udpList))
-          this.store.commit('dag/setName', _.cloneDeep(this.name))
-          this.store.commit('dag/setDesc', _.cloneDeep(this.desc))
-          this.store.commit('dag/setSyncDefine', this.syncDefine)
+          this._accuStore()
+
           Affirm.setIsPop(false)
           this.$emit('onUdp')
         }
@@ -124,22 +173,33 @@
       }
     },
     watch: {
+      checkedTimeout (val) {
+        if (!val) {
+          this.timeout = 0
+          this.store.commit('dag/setTimeout', _.cloneDeep(this.timeout))
+        }
+      }
     },
     created () {
-      this.udpList = this.store.state.dag.globalParams
-      this.name = this.store.state.dag.name
-      this.desc = this.store.state.dag.desc
-      this.syncDefine = this.store.state.dag.syncDefine
+      const dag = _.cloneDeep(this.store.state.dag)
+      this.udpList = dag.globalParams
+      this.udpListCache = dag.globalParams
+      this.name = dag.name
+      this.desc = dag.desc
+      this.syncDefine = dag.syncDefine
+      this.timeout = dag.timeout || 0
+      this.checkedTimeout = this.timeout !== 0
+      this.tenantId = dag.tenantId || -1
     },
     mounted () {},
-    components: { mLocalParams }
+    components: {FormTenant, mLocalParams }
   }
 </script>
 
 <style lang="scss" rel="stylesheet/scss">
   .udp-model {
-    width: 616px;
-    min-height: 326px;
+    width: 624px;
+    min-height: 420px;
     background: #fff;
     border-radius: 3px;
     padding:20px 0 ;
@@ -182,6 +242,14 @@
     }
     .content {
       padding-bottom: 50px;
+      .user-def-params-model {
+        .add {
+          a {
+            color: #0097e0;
+          }
+        }
+      }
     }
+
   }
 </style>

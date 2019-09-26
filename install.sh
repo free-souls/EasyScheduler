@@ -1,352 +1,465 @@
 #!/bin/sh
 
-wokDir=`dirname $0`
-wokDir=`cd ${wokDir};pwd`
+workDir=`dirname $0`
+workDir=`cd ${workDir};pwd`
 
-source ${wokDir}/conf/config/run_config.conf
-source ${wokDir}/conf/config/install_config.conf
+#To be compatible with MacOS and Linux
+txt=""
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Mac OSX
+    txt="''"
+elif [[ "$OSTYPE" == "linux-gnu" ]]; then
+    # linux
+    txt=""
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+    # POSIX compatibility layer and Linux environment emulation for Windows
+    echo "Easy Scheduler not support Windows operating system"
+    exit 1
+elif [[ "$OSTYPE" == "msys" ]]; then
+    # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+    echo "Easy Scheduler not support Windows operating system"
+    exit 1
+elif [[ "$OSTYPE" == "win32" ]]; then
+    echo "Easy Scheduler not support Windows operating system"
+    exit 1
+elif [[ "$OSTYPE" == "freebsd"* ]]; then
+    # ...
+    txt=""
+else
+    # Unknown.
+    echo "Operating system unknown, please tell us(submit issue) for better service"
+    exit 1
+fi
 
-# mysql配置
-# mysql 地址,端口
+source ${workDir}/conf/config/run_config.conf
+source ${workDir}/conf/config/install_config.conf
+
+# mysql config
+# mysql address and port
 mysqlHost="192.168.xx.xx:3306"
 
-# mysql 数据库名称
-mysqlDb="eschedule"
+# mysql database
+mysqlDb="escheduler"
 
-# mysql 用户名
-mysqlUseName="xx"
+# mysql username
+mysqlUserName="xx"
 
-# mysql 密码
-mysqlPasswod="xx"
+# mysql passwprd
+# Note: if there are special characters, please use the \ transfer character to transfer
+mysqlPassword="xx"
+
+# conf/config/install_config.conf config
+# Note: the installation path is not the same as the current path (pwd)
+installPath="/data1_1T/escheduler"
+
+# deployment user
+# Note: the deployment user needs to have sudo privileges and permissions to operate hdfs. If hdfs is enabled, the root directory needs to be created by itself
+deployUser="escheduler"
+
+# zk cluster
+zkQuorum="192.168.xx.xx:2181,192.168.xx.xx:2181,192.168.xx.xx:2181"
+
+# install hosts
+# Note: install the scheduled hostname list. If it is pseudo-distributed, just write a pseudo-distributed hostname
+ips="ark0,ark1,ark2,ark3,ark4"
+
+# conf/config/run_config.conf config
+# run master machine
+# Note: list of hosts hostname for deploying master
+masters="ark0,ark1"
+
+# run worker machine
+# note: list of machine hostnames for deploying workers
+workers="ark2,ark3,ark4"
+
+# run alert machine
+# note: list of machine hostnames for deploying alert server
+alertServer="ark3"
+
+# run api machine
+# note: list of machine hostnames for deploying api server
+apiServers="ark1"
+
+# alert config
+# mail protocol
+mailProtocol="SMTP"
+
+# mail server host
+mailServerHost="smtp.exmail.qq.com"
+
+# mail server port
+mailServerPort="25"
+
+# sender
+mailSender="xxxxxxxxxx"
+
+# sender password
+mailPassword="xxxxxxxxxx"
+
+# TLS mail protocol support
+starttlsEnable="false"
+
+# SSL mail protocol support
+# note: The SSL protocol is enabled by default. 
+# only one of TLS and SSL can be in the true state.
+sslEnable="true"
+
+# download excel path
+xlsFilePath="/tmp/xls"
+
+# Enterprise WeChat Enterprise ID Configuration
+enterpriseWechatCorpId="xxxxxxxxxx"
+
+# Enterprise WeChat application Secret configuration
+enterpriseWechatSecret="xxxxxxxxxx"
+
+# Enterprise WeChat Application AgentId Configuration
+enterpriseWechatAgentId="xxxxxxxxxx"
+
+# Enterprise WeChat user configuration, multiple users to , split
+enterpriseWechatUsers="xxxxx,xxxxx"
 
 
-# hadoop 配置
-# namenode地址,支持HA,需要将coe-site.xml和hdfs-site.xml放到conf目录下
-namenodeFs="hdfs://mycluste:8020"
+# whether to start monitoring self-starting scripts
+monitorServerState="false"
 
-# esourcemanager HA配置，如果是单resourcemanager,这里为空即可
-yanHaIps="192.168.xx.xx,192.168.xx.xx"
+# resource Center upload and select storage method：HDFS,S3,NONE
+resUploadStartupType="NONE"
 
-# 如果是单 esourcemanager,只需要配置一个主机名称,如果是resourcemanager HA,则默认配置就好
-singleYanIp="ark1"
+# if resUploadStartupType is HDFS，defaultFS write namenode address，HA you need to put core-site.xml and hdfs-site.xml in the conf directory.
+# if S3，write S3 address，HA，for example ：s3a://escheduler，
+# Note，s3 be sure to create the root directory /escheduler
+defaultFS="hdfs://mycluster:8020"
 
+# if S3 is configured, the following configuration is required.
+s3Endpoint="http://192.168.xx.xx:9010"
+s3AccessKey="xxxxxxxxxx"
+s3SecretKey="xxxxxxxxxx"
 
-# common 配置
-# 程序路径
-pogramPath="/tmp/escheduler"
+# resourcemanager HA configuration, if it is a single resourcemanager, here is yarnHaIps=""
+yarnHaIps="192.168.xx.xx,192.168.xx.xx"
 
-#下载路径
-downloadPath="/tmp/eschedule/download"
+# if it is a single resourcemanager, you only need to configure one host name. If it is resourcemanager HA, the default configuration is fine.
+singleYarnIp="ark1"
 
-# 任务执行路径
-execPath="/tmp/eschedule/exec"
+# hdfs root path, the owner of the root path must be the deployment user. 
+# versions prior to 1.1.0 do not automatically create the hdfs root directory, you need to create it yourself.
+hdfsPath="/escheduler"
 
-# hdfs根路径
-hdfsPath="/eschedule"
+# have users who create directory permissions under hdfs root path /
+# Note: if kerberos is enabled, hdfsRootUser="" can be used directly.
+hdfsRootUser="hdfs"
 
-# 是否启动hdfs,如果启动则为tue,不启动设置为false
-hdfsStatupSate="true"
+# common config
+# Program root path
+programPath="/tmp/escheduler"
 
-# SHELL环境变量路径
-shellEnvPath="/opt/.eschedule_env.sh"
+# download path
+downloadPath="/tmp/escheduler/download"
 
-# Python换将变量路径
-pythonEnvPath="/opt/eschedule_env.py"
+# task execute path
+execPath="/tmp/escheduler/exec"
 
-# 资源文件的后缀
-esSuffixs="txt,log,sh,conf,cfg,py,java,sql,hql,xml"
+# SHELL environmental variable path
+shellEnvPath="$installPath/conf/env/.escheduler_env.sh"
 
-# 开发状态,如果是tue,对于SHELL脚本可以在execPath目录下查看封装后的SHELL脚本,如果是false则执行完成直接删除
-devState="tue"
+# suffix of the resource file
+resSuffixs="txt,log,sh,conf,cfg,py,java,sql,hql,xml"
 
+# development status, if true, for the SHELL script, you can view the encapsulated SHELL script in the execPath directory. 
+# If it is false, execute the direct delete
+devState="true"
 
-# zk 配置
-# zk集群
-zkQuoum="192.168.xx.xx:2181,192.168.xx.xx:2181,192.168.xx.xx:2181"
+# kerberos config
+# kerberos whether to start
+kerberosStartUp="false"
 
-# zk根目录
-zkRoot="/eschedule"
+# kdc krb5 config file path
+krb5ConfPath="$installPath/conf/krb5.conf"
 
-# 用来记录挂掉机器的zk目录
-zkDeadSevers="/escheduler/dead-servers"
+# keytab username
+keytabUserName="hdfs-mycluster@ESZ.COM"
 
-# mastes目录
-zkMastes="/escheduler/masters"
+# username keytab path
+keytabPath="$installPath/conf/hdfs.headless.keytab"
 
-# wokers目录
-zkWokers="/escheduler/workers"
+# zk config
+# zk root directory
+zkRoot="/escheduler"
 
-# zk maste分布式锁
-mastesLock="/escheduler/lock/masters"
+# used to record the zk directory of the hanging machine
+zkDeadServers="/escheduler/dead-servers"
 
-# zk woker分布式锁
-wokersLock="/escheduler/lock/workers"
+# masters directory
+zkMasters="$zkRoot/masters"
 
-# zk maste容错分布式锁
-mastesFailover="/escheduler/lock/failover/masters"
+# workers directory
+zkWorkers="$zkRoot/workers"
 
-# zk woker容错分布式锁
-wokersFailover="/escheduler/lock/failover/masters"
+# zk master distributed lock
+mastersLock="$zkRoot/lock/masters"
 
-# zk session 超时
+# zk worker distributed lock
+workersLock="$zkRoot/lock/workers"
+
+# zk master fault-tolerant distributed lock
+mastersFailover="$zkRoot/lock/failover/masters"
+
+# zk worker fault-tolerant distributed lock
+workersFailover="$zkRoot/lock/failover/workers"
+
+# zk master start fault tolerant distributed lock
+mastersStartupFailover="$zkRoot/lock/failover/startup-masters"
+
+# zk session timeout
 zkSessionTimeout="300"
 
-# zk 连接超时
+# zk connection timeout
 zkConnectionTimeout="300"
 
-# zk 重试间隔
-zkRetySleep="100"
+# zk retry interval
+zkRetrySleep="100"
 
-# zk重试最大次数
-zkRetyMaxtime="5"
-
-
-# maste 配置
-# maste执行线程最大数,流程实例的最大并行度
-masteExecThreads="100"
-
-# maste任务执行线程最大数,每一个流程实例的最大并行度
-masteExecTaskNum="20"
-
-# maste心跳间隔
-masteHeartbeatInterval="10"
-
-# maste任务提交重试次数
-masteTaskCommitRetryTimes="5"
-
-# maste任务提交重试时间间隔
-masteTaskCommitInterval="100"
-
-# maste最大cpu平均负载,用来判断master是否还有执行能力
-masteMaxCupLoadAvg="10"
-
-# maste预留内存,用来判断master是否还有执行能力
-masteReservedMemory="1"
+# zk retry maximum number of times
+zkRetryMaxtime="5"
 
 
-# woker 配置
-# woker执行线程
-wokerExecThreads="100"
+# master config 
+# master execution thread maximum number, maximum parallelism of process instance
+masterExecThreads="100"
 
-# woker心跳间隔
-wokerHeartbeatInterval="10"
+# the maximum number of master task execution threads, the maximum degree of parallelism for each process instance
+masterExecTaskNum="20"
 
-# woker一次抓取任务数
-wokerFetchTaskNum="10"
+# master heartbeat interval
+masterHeartbeatInterval="10"
 
-# woker最大cpu平均负载,用来判断master是否还有执行能力
-wokerMaxCupLoadAvg="10"
+# master task submission retries
+masterTaskCommitRetryTimes="5"
 
-# woker预留内存,用来判断master是否还有执行能力
-wokerReservedMemory="1"
+# master task submission retry interval
+masterTaskCommitInterval="100"
+
+# master maximum cpu average load, used to determine whether the master has execution capability
+masterMaxCpuLoadAvg="10"
+
+# master reserve memory to determine if the master has execution capability
+masterReservedMemory="1"
 
 
-# api 配置
-# api 服务端口
-apiSeverPort="12345"
+# worker config 
+# worker execution thread
+workerExecThreads="100"
 
-# api session 超时
-apiSeverSessionTimeout="7200"
+# worker heartbeat interval
+workerHeartbeatInterval="10"
 
-# api 上下文路径
-apiSeverContextPath="/escheduler/"
+# worker number of fetch tasks
+workerFetchTaskNum="3"
 
-# sping 最大文件大小
-spingMaxFileSize="1024MB"
+# workerThe maximum cpu average load, used to determine whether the worker still has the ability to execute, 
+# keep the system default, the default is twice the number of cpu cores, when the load reaches 2 times
+#workerMaxCupLoadAvg="10"
 
-# sping 最大请求文件大小
-spingMaxRequestSize="1024MB"
+# worker reserve memory to determine if the master has execution capability
+workerReservedMemory="1"
 
-# api 最大post请求大小
+# api config
+# api server port
+apiServerPort="12345"
+
+# api session timeout
+apiServerSessionTimeout="7200"
+
+# api server context path
+apiServerContextPath="/escheduler/"
+
+# spring max file size
+springMaxFileSize="1024MB"
+
+# spring max request size
+springMaxRequestSize="1024MB"
+
+# api max http post size
 apiMaxHttpPostSize="5000000"
 
+# 1,replace file
+echo "1,replace file"
+sed -i ${txt} "s#spring.datasource.url.*#spring.datasource.url=jdbc:mysql://${mysqlHost}/${mysqlDb}?characterEncoding=UTF-8#g" conf/dao/data_source.properties
+sed -i ${txt} "s#spring.datasource.username.*#spring.datasource.username=${mysqlUserName}#g" conf/dao/data_source.properties
+sed -i ${txt} "s#spring.datasource.password.*#spring.datasource.password=${mysqlPassword}#g" conf/dao/data_source.properties
+
+sed -i ${txt} "s#org.quartz.dataSource.myDs.URL.*#org.quartz.dataSource.myDs.URL=jdbc:mysql://${mysqlHost}/${mysqlDb}?characterEncoding=UTF-8#g" conf/quartz.properties
+sed -i ${txt} "s#org.quartz.dataSource.myDs.user.*#org.quartz.dataSource.myDs.user=${mysqlUserName}#g" conf/quartz.properties
+sed -i ${txt} "s#org.quartz.dataSource.myDs.password.*#org.quartz.dataSource.myDs.password=${mysqlPassword}#g" conf/quartz.properties
 
 
-# alet配置
-
-# 邮件协议
-mailPotocol="SMTP"
-
-# 邮件服务host
-mailSeverHost="smtp.exmail.qq.com"
-
-# 邮件服务端口
-mailSeverPort="25"
-
-# 发送人
-mailSende="xxxxxxxxxx"
-
-# 发送人密码
-mailPasswod="xxxxxxxxxx"
-
-# 下载Excel路径
-xlsFilePath="/opt/xls"
-
-# conf/config/install_config.conf配置
-# 安装路径
-installPath="/data1_1T/eschedule"
-
-# 部署用户
-deployUse="escheduler"
-
-# 安装hosts
-ips="ak0,ark1,ark2,ark3,ark4"
+sed -i ${txt} "s#fs.defaultFS.*#fs.defaultFS=${defaultFS}#g" conf/common/hadoop/hadoop.properties
+sed -i ${txt} "s#fs.s3a.endpoint.*#fs.s3a.endpoint=${s3Endpoint}#g" conf/common/hadoop/hadoop.properties
+sed -i ${txt} "s#fs.s3a.access.key.*#fs.s3a.access.key=${s3AccessKey}#g" conf/common/hadoop/hadoop.properties
+sed -i ${txt} "s#fs.s3a.secret.key.*#fs.s3a.secret.key=${s3SecretKey}#g" conf/common/hadoop/hadoop.properties
+sed -i ${txt} "s#yarn.resourcemanager.ha.rm.ids.*#yarn.resourcemanager.ha.rm.ids=${yarnHaIps}#g" conf/common/hadoop/hadoop.properties
+sed -i ${txt} "s#yarn.application.status.address.*#yarn.application.status.address=http://${singleYarnIp}:8088/ws/v1/cluster/apps/%s#g" conf/common/hadoop/hadoop.properties
 
 
-# conf/config/un_config.conf配置
-# 运行Maste的机器
-mastes="ark0,ark1"
+sed -i ${txt} "s#data.basedir.path.*#data.basedir.path=${programPath}#g" conf/common/common.properties
+sed -i ${txt} "s#data.download.basedir.path.*#data.download.basedir.path=${downloadPath}#g" conf/common/common.properties
+sed -i ${txt} "s#process.exec.basepath.*#process.exec.basepath=${execPath}#g" conf/common/common.properties
+sed -i ${txt} "s#hdfs.root.user.*#hdfs.root.user=${hdfsRootUser}#g" conf/common/common.properties
+sed -i ${txt} "s#data.store2hdfs.basepath.*#data.store2hdfs.basepath=${hdfsPath}#g" conf/common/common.properties
+sed -i ${txt} "s#res.upload.startup.type.*#res.upload.startup.type=${resUploadStartupType}#g" conf/common/common.properties
+sed -i ${txt} "s#escheduler.env.path.*#escheduler.env.path=${shellEnvPath}#g" conf/common/common.properties
+sed -i ${txt} "s#resource.view.suffixs.*#resource.view.suffixs=${resSuffixs}#g" conf/common/common.properties
+sed -i ${txt} "s#development.state.*#development.state=${devState}#g" conf/common/common.properties
+sed -i ${txt} "s#hadoop.security.authentication.startup.state.*#hadoop.security.authentication.startup.state=${kerberosStartUp}#g" conf/common/common.properties
+sed -i ${txt} "s#java.security.krb5.conf.path.*#java.security.krb5.conf.path=${krb5ConfPath}#g" conf/common/common.properties
+sed -i ${txt} "s#login.user.keytab.username.*#login.user.keytab.username=${keytabUserName}#g" conf/common/common.properties
+sed -i ${txt} "s#login.user.keytab.path.*#login.user.keytab.path=${keytabPath}#g" conf/common/common.properties
 
-# 运行Woker的机器
-wokers="ark2,ark3,ark4"
+sed -i ${txt} "s#zookeeper.quorum.*#zookeeper.quorum=${zkQuorum}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.root.*#zookeeper.escheduler.root=${zkRoot}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.dead.servers.*#zookeeper.escheduler.dead.servers=${zkDeadServers}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.masters.*#zookeeper.escheduler.masters=${zkMasters}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.workers.*#zookeeper.escheduler.workers=${zkWorkers}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.lock.masters.*#zookeeper.escheduler.lock.masters=${mastersLock}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.lock.workers.*#zookeeper.escheduler.lock.workers=${workersLock}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.lock.failover.masters.*#zookeeper.escheduler.lock.failover.masters=${mastersFailover}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.lock.failover.workers.*#zookeeper.escheduler.lock.failover.workers=${workersFailover}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.escheduler.lock.failover.startup.masters.*#zookeeper.escheduler.lock.failover.startup.masters=${mastersStartupFailover}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.session.timeout.*#zookeeper.session.timeout=${zkSessionTimeout}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.connection.timeout.*#zookeeper.connection.timeout=${zkConnectionTimeout}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.retry.sleep.*#zookeeper.retry.sleep=${zkRetrySleep}#g" conf/zookeeper.properties
+sed -i ${txt} "s#zookeeper.retry.maxtime.*#zookeeper.retry.maxtime=${zkRetryMaxtime}#g" conf/zookeeper.properties
 
-# 运行Alet的机器
-aletServer="ark3"
-
-# 运行Api的机器
-apiSevers="ark1"
-
-
-# 1,替换文件
-echo "1,替换文件"
-sed -i '' "s#sping.datasource.url.*#spring.datasource.url=jdbc:mysql://${mysqlHost}/${mysqlDb}?characterEncoding=UTF-8#g" conf/dao/data_source.properties
-sed -i '' "s#sping.datasource.username.*#spring.datasource.username=${mysqlUserName}#g" conf/dao/data_source.properties
-sed -i '' "s#sping.datasource.password.*#spring.datasource.password=${mysqlPassword}#g" conf/dao/data_source.properties
-
-sed -i '' "s#og.quartz.dataSource.myDs.URL.*#org.quartz.dataSource.myDs.URL=jdbc:mysql://${mysqlHost}/${mysqlDb}?characterEncoding=UTF-8#g" conf/quartz.properties
-sed -i '' "s#og.quartz.dataSource.myDs.user.*#org.quartz.dataSource.myDs.user=${mysqlUserName}#g" conf/quartz.properties
-sed -i '' "s#og.quartz.dataSource.myDs.password.*#org.quartz.dataSource.myDs.password=${mysqlPassword}#g" conf/quartz.properties
-
-
-sed -i '' "s#fs.defaultFS.*#fs.defaultFS = ${namenodeFs}#g" conf/common/hadoop/hadoop.properties
-sed -i '' "s#yan.resourcemanager.ha.rm.ids.*#yarn.resourcemanager.ha.rm.ids=${yarnHaIps}#g" conf/common/hadoop/hadoop.properties
-sed -i '' "s#yan.application.status.address.*#yarn.application.status.address=http://${singleYarnIp}:8088/ws/v1/cluster/apps/%s#g" conf/common/hadoop/hadoop.properties
-
-sed -i '' "s#data.basedi.path.*#data.basedir.path=${programPath}#g" conf/common/common.properties
-sed -i '' "s#data.download.basedi.path.*#data.download.basedir.path=${downloadPath}#g" conf/common/common.properties
-sed -i '' "s#pocess.exec.basepath.*#process.exec.basepath=${execPath}#g" conf/common/common.properties
-sed -i '' "s#data.stoe2hdfs.basepath.*#data.store2hdfs.basepath=${hdfsPath}#g" conf/common/common.properties
-sed -i '' "s#hdfs.statup.state.*#hdfs.startup.state=${hdfsStartupSate}#g" conf/common/common.properties
-sed -i '' "s#eschedule.env.path.*#escheduler.env.path=${shellEnvPath}#g" conf/common/common.properties
-sed -i '' "s#eschedule.env.py.*#escheduler.env.py=${pythonEnvPath}#g" conf/common/common.properties
-sed -i '' "s#esource.view.suffixs.*#resource.view.suffixs=${resSuffixs}#g" conf/common/common.properties
-sed -i '' "s#development.state.*#development.state=${devState}#g" conf/common/common.properties
-
-sed -i '' "s#zookeepe.quorum.*#zookeeper.quorum=${zkQuorum}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.root.*#zookeeper.escheduler.root=${zkRoot}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.dead.servers.*#zookeeper.escheduler.dead.servers=${zkDeadServers}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.masters.*#zookeeper.escheduler.masters=${zkMasters}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.workers.*#zookeeper.escheduler.workers=${zkWorkers}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.lock.masters.*#zookeeper.escheduler.lock.masters=${mastersLock}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.lock.workers.*#zookeeper.escheduler.lock.workers=${workersLock}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.lock.masters.failover.*#zookeeper.escheduler.lock.masters.failover=${mastersFailover}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.escheduler.lock.workers.failover.*#zookeeper.escheduler.lock.workers.failover=${workersFailover}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.session.timeout.*#zookeeper.session.timeout=${zkSessionTimeout}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.connection.timeout.*#zookeeper.connection.timeout=${zkConnectionTimeout}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.retry.sleep.*#zookeeper.retry.sleep=${zkRetrySleep}#g" conf/zookeeper.properties
-sed -i '' "s#zookeepe.retry.maxtime.*#zookeeper.retry.maxtime=${zkRetryMaxtime}#g" conf/zookeeper.properties
-
-sed -i '' "s#maste.exec.threads.*#master.exec.threads=${masterExecThreads}#g" conf/master.properties
-sed -i '' "s#maste.exec.task.number.*#master.exec.task.number=${masterExecTaskNum}#g" conf/master.properties
-sed -i '' "s#maste.heartbeat.interval.*#master.heartbeat.interval=${masterHeartbeatInterval}#g" conf/master.properties
-sed -i '' "s#maste.task.commit.retryTimes.*#master.task.commit.retryTimes=${masterTaskCommitRetryTimes}#g" conf/master.properties
-sed -i '' "s#maste.task.commit.interval.*#master.task.commit.interval=${masterTaskCommitInterval}#g" conf/master.properties
-sed -i '' "s#maste.max.cpuload.avg.*#master.max.cpuload.avg=${masterMaxCupLoadAvg}#g" conf/master.properties
-sed -i '' "s#maste.reserved.memory.*#master.reserved.memory=${masterReservedMemory}#g" conf/master.properties
+sed -i ${txt} "s#master.exec.threads.*#master.exec.threads=${masterExecThreads}#g" conf/master.properties
+sed -i ${txt} "s#master.exec.task.number.*#master.exec.task.number=${masterExecTaskNum}#g" conf/master.properties
+sed -i ${txt} "s#master.heartbeat.interval.*#master.heartbeat.interval=${masterHeartbeatInterval}#g" conf/master.properties
+sed -i ${txt} "s#master.task.commit.retryTimes.*#master.task.commit.retryTimes=${masterTaskCommitRetryTimes}#g" conf/master.properties
+sed -i ${txt} "s#master.task.commit.interval.*#master.task.commit.interval=${masterTaskCommitInterval}#g" conf/master.properties
+#sed -i ${txt} "s#master.max.cpuload.avg.*#master.max.cpuload.avg=${masterMaxCpuLoadAvg}#g" conf/master.properties
+sed -i ${txt} "s#master.reserved.memory.*#master.reserved.memory=${masterReservedMemory}#g" conf/master.properties
 
 
-sed -i '' "s#woker.exec.threads.*#worker.exec.threads=${workerExecThreads}#g" conf/worker.properties
-sed -i '' "s#woker.heartbeat.interval.*#worker.heartbeat.interval=${workerHeartbeatInterval}#g" conf/worker.properties
-sed -i '' "s#woker.fetch.task.num.*#worker.fetch.task.num=${workerFetchTaskNum}#g" conf/worker.properties
-sed -i '' "s#woker.max.cpuload.avg.*#worker.max.cpuload.avg=${workerMaxCupLoadAvg}#g" conf/worker.properties
-sed -i '' "s#woker.reserved.memory.*#worker.reserved.memory=${workerReservedMemory}#g" conf/worker.properties
+sed -i ${txt} "s#worker.exec.threads.*#worker.exec.threads=${workerExecThreads}#g" conf/worker.properties
+sed -i ${txt} "s#worker.heartbeat.interval.*#worker.heartbeat.interval=${workerHeartbeatInterval}#g" conf/worker.properties
+sed -i ${txt} "s#worker.fetch.task.num.*#worker.fetch.task.num=${workerFetchTaskNum}#g" conf/worker.properties
+#sed -i ${txt} "s#worker.max.cpuload.avg.*#worker.max.cpuload.avg=${workerMaxCupLoadAvg}#g" conf/worker.properties
+sed -i ${txt} "s#worker.reserved.memory.*#worker.reserved.memory=${workerReservedMemory}#g" conf/worker.properties
 
 
-sed -i '' "s#sever.port.*#server.port=${apiServerPort}#g" conf/application.properties
-sed -i '' "s#sever.session.timeout.*#server.session.timeout=${apiServerSessionTimeout}#g" conf/application.properties
-sed -i '' "s#sever.context-path.*#server.context-path=${apiServerContextPath}#g" conf/application.properties
-sed -i '' "s#sping.http.multipart.max-file-size.*#spring.http.multipart.max-file-size=${springMaxFileSize}#g" conf/application.properties
-sed -i '' "s#sping.http.multipart.max-request-size.*#spring.http.multipart.max-request-size=${springMaxRequestSize}#g" conf/application.properties
-sed -i '' "s#sever.max-http-post-size.*#server.max-http-post-size=${apiMaxHttpPostSize}#g" conf/application.properties
+sed -i ${txt} "s#server.port.*#server.port=${apiServerPort}#g" conf/application.properties
+sed -i ${txt} "s#server.servlet.session.timeout.*#server.servlet.session.timeout=${apiServerSessionTimeout}#g" conf/application.properties
+sed -i ${txt} "s#server.servlet.context-path.*#server.servlet.context-path=${apiServerContextPath}#g" conf/application.properties
+sed -i ${txt} "s#spring.servlet.multipart.max-file-size.*#spring.servlet.multipart.max-file-size=${springMaxFileSize}#g" conf/application.properties
+sed -i ${txt} "s#spring.servlet.multipart.max-request-size.*#spring.servlet.multipart.max-request-size=${springMaxRequestSize}#g" conf/application.properties
+sed -i ${txt} "s#server.jetty.max-http-post-size.*#server.jetty.max-http-post-size=${apiMaxHttpPostSize}#g" conf/application.properties
 
 
-sed -i '' "s#mail.potocol.*#mail.protocol=${mailProtocol}#g" conf/alert.properties
-sed -i '' "s#mail.sever.host.*#mail.server.host=${mailServerHost}#g" conf/alert.properties
-sed -i '' "s#mail.sever.port.*#mail.server.port=${mailServerPort}#g" conf/alert.properties
-sed -i '' "s#mail.sende.*#mail.sender=${mailSender}#g" conf/alert.properties
-sed -i '' "s#mail.passwd.*#mail.passwd=${mailPasswod}#g" conf/alert.properties
-sed -i '' "s#xls.file.path.*#xls.file.path=${xlsFilePath}#g" conf/alert.properties
+sed -i ${txt} "s#mail.protocol.*#mail.protocol=${mailProtocol}#g" conf/alert.properties
+sed -i ${txt} "s#mail.server.host.*#mail.server.host=${mailServerHost}#g" conf/alert.properties
+sed -i ${txt} "s#mail.server.port.*#mail.server.port=${mailServerPort}#g" conf/alert.properties
+sed -i ${txt} "s#mail.sender.*#mail.sender=${mailSender}#g" conf/alert.properties
+sed -i ${txt} "s#mail.passwd.*#mail.passwd=${mailPassword}#g" conf/alert.properties
+sed -i ${txt} "s#mail.smtp.starttls.enable.*#mail.smtp.starttls.enable=${starttlsEnable}#g" conf/alert.properties
+sed -i ${txt} "s#mail.smtp.ssl.enable.*#mail.smtp.ssl.enable=${sslEnable}#g" conf/alert.properties
+sed -i ${txt} "s#xls.file.path.*#xls.file.path=${xlsFilePath}#g" conf/alert.properties
+sed -i ${txt} "s#enterprise.wechat.corp.id.*#enterprise.wechat.corp.id=${enterpriseWechatCorpId}#g" conf/alert.properties
+sed -i ${txt} "s#enterprise.wechat.secret.*#enterprise.wechat.secret=${enterpriseWechatSecret}#g" conf/alert.properties
+sed -i ${txt} "s#enterprise.wechat.agent.id.*#enterprise.wechat.agent.id=${enterpriseWechatAgentId}#g" conf/alert.properties
+sed -i ${txt} "s#enterprise.wechat.users.*#enterprise.wechat.users=${enterpriseWechatUsers}#g" conf/alert.properties
 
 
-sed -i '' "s#installPath.*#installPath=${installPath}#g" conf/config/install_config.conf
-sed -i '' "s#deployUse.*#deployUser=${deployUser}#g" conf/config/install_config.conf
-sed -i '' "s#ips.*#ips=${ips}#g" conf/config/install_config.conf
+sed -i ${txt} "s#installPath.*#installPath=${installPath}#g" conf/config/install_config.conf
+sed -i ${txt} "s#deployUser.*#deployUser=${deployUser}#g" conf/config/install_config.conf
+sed -i ${txt} "s#ips.*#ips=${ips}#g" conf/config/install_config.conf
 
 
-sed -i '' "s#mastes.*#masters=${masters}#g" conf/config/run_config.conf
-sed -i '' "s#wokers.*#workers=${workers}#g" conf/config/run_config.conf
-sed -i '' "s#aletServer.*#alertServer=${alertServer}#g" conf/config/run_config.conf
-sed -i '' "s#apiSevers.*#apiServers=${apiServers}#g" conf/config/run_config.conf
+sed -i ${txt} "s#masters.*#masters=${masters}#g" conf/config/run_config.conf
+sed -i ${txt} "s#workers.*#workers=${workers}#g" conf/config/run_config.conf
+sed -i ${txt} "s#alertServer.*#alertServer=${alertServer}#g" conf/config/run_config.conf
+sed -i ${txt} "s#apiServers.*#apiServers=${apiServers}#g" conf/config/run_config.conf
 
 
-
-
-# 2,创建目录
-echo "2,创建目录"
+# 2,create directory
+echo "2,create directory"
 
 if [ ! -d $installPath ];then
-  sudo mkdi -p $installPath
-  sudo chown -R $deployUse:$deployUser $installPath
+  sudo mkdir -p $installPath
+  sudo chown -R $deployUser:$deployUser $installPath
 fi
 
-hostsAr=(${ips//,/ })
-fo host in ${hostsArr[@]}
+hostsArr=(${ips//,/ })
+for host in ${hostsArr[@]}
 do
 
-# 如果pogramPath不存在,则创建
-if ! ssh $host test -e $pogramPath; then
-  ssh $host "sudo mkdi -p $programPath;sudo chown -R $deployUser:$deployUser $programPath"
+# create if programPath does not exist
+if ! ssh $host test -e $programPath; then
+  ssh $host "sudo mkdir -p $programPath;sudo chown -R $deployUser:$deployUser $programPath"
 fi
 
-# 如果downloadPath不存在,则创建
+# create if downloadPath does not exist
 if ! ssh $host test -e $downloadPath; then
-  ssh $host "sudo mkdi -p $downloadPath;sudo chown -R $deployUser:$deployUser $downloadPath"
+  ssh $host "sudo mkdir -p $downloadPath;sudo chown -R $deployUser:$deployUser $downloadPath"
 fi
 
-# 如果$execPath不存在,则创建
+# create if execPath does not exist
 if ! ssh $host test -e $execPath; then
-  ssh $host "sudo mkdi -p $execPath; sudo chown -R $deployUser:$deployUser $execPath"
+  ssh $host "sudo mkdir -p $execPath; sudo chown -R $deployUser:$deployUser $execPath"
 fi
 
-# 如果$xlsFilePath不存在,则创建
+# create if xlsFilePath does not exist
 if ! ssh $host test -e $xlsFilePath; then
-  ssh $host "sudo mkdi -p $xlsFilePath; sudo chown -R $deployUser:$deployUser $xlsFilePath"
+  ssh $host "sudo mkdir -p $xlsFilePath; sudo chown -R $deployUser:$deployUser $xlsFilePath"
 fi
 
 done
 
 
-# 3,停止服务
-echo "3,停止服务"
-sh $wokDir/script/stop_all.sh
+# 3,stop server
+echo "3,stop server"
+sh ${workDir}/script/stop-all.sh
 
-# 4,删除zk节点
-echo "4,删除zk节点"
+# 4,delete zk node
+echo "4,delete zk node"
 sleep 1
-python $wokDir/script/del_zk_node.py $zkQuorum $zkRoot
+python ${workDir}/script/del-zk-node.py $zkQuorum $zkRoot
 
-# 5,scp资源
-echo "5,scp资源"
-sh $wokDir/script/scp_hosts.sh
-
+# 5,scp resources
+echo "5,scp resources"
+sh ${workDir}/script/scp-hosts.sh
 if [ $? -eq 0 ]
 then
-	echo 'scp拷贝完成'
+	echo 'scp copy completed'
 else
-	echo 'sc 拷贝失败退出'
+	echo 'sc copy failed to exit'
 	exit -1
 fi
 
-# 6,启动
-echo "6,启动"
-sh $wokDir/script/start_all.sh
+# 6,startup
+echo "6,startup"
+sh ${workDir}/script/start-all.sh
+
+# 7,start monitoring self-starting script
+monitor_pid=${workDir}/monitor_server.pid
+if [ "true" = $monitorServerState ];then
+        if [ -f $monitor_pid ]; then
+                TARGET_PID=`cat $monitor_pid`
+                if kill -0 $TARGET_PID > /dev/null 2>&1; then
+                        echo "monitor server running as process ${TARGET_PID}.Stopping"
+                        kill $TARGET_PID
+                        sleep 5
+                        if kill -0 $TARGET_PID > /dev/null 2>&1; then
+                                echo "monitor server did not stop gracefully after 5 seconds: killing with kill -9"
+                                kill -9 $TARGET_PID
+                        fi
+                else
+                        echo "no monitor server to stop"
+                fi
+                echo "monitor server running as process ${TARGET_PID}.Stopped success"
+                rm -f $monitor_pid
+        fi
+        nohup python -u ${workDir}/script/monitor-server.py $installPath $zkQuorum $zkMasters $zkWorkers > ${workDir}/monitor-server.log 2>&1 &
+        echo $! > $monitor_pid
+        echo "start monitor server success as process `cat $monitor_pid`"
+
+fi

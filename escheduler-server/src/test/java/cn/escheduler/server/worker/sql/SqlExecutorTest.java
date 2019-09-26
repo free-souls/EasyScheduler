@@ -23,12 +23,12 @@ import cn.escheduler.dao.DaoFactory;
 import cn.escheduler.dao.ProcessDao;
 import cn.escheduler.dao.model.TaskInstance;
 import cn.escheduler.server.utils.LoggerUtils;
-import cn.escheduler.server.worker.log.TaskLogger;
 import cn.escheduler.server.worker.task.AbstractTask;
 import cn.escheduler.server.worker.task.TaskManager;
 import cn.escheduler.server.worker.task.TaskProps;
 import com.alibaba.fastjson.JSONObject;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +38,10 @@ import java.util.Date;
 /**
  *  python shell command executor test
  */
+@Ignore
 public class SqlExecutorTest {
 
     private static final Logger logger = LoggerFactory.getLogger(SqlExecutorTest.class);
-    private static final String TASK_PREFIX = "TASK";
 
     private ProcessDao processDao = null;
 
@@ -52,21 +52,63 @@ public class SqlExecutorTest {
 
     @Test
     public void test() throws Exception {
+        String nodeName = "mysql sql test";
+        String taskAppId = "51_11282_263978";
+        String tenantCode = "hdfs";
+        int taskInstId = 263978;
+        sharedTestSqlTask(nodeName, taskAppId, tenantCode, taskInstId);
+    }
 
+    @Test
+    public void testClickhouse() throws Exception {
+        String nodeName = "ClickHouse sql test";
+        String taskAppId = "1_11_20";
+        String tenantCode = "default";
+        int taskInstId = 20;
+        sharedTestSqlTask(nodeName, taskAppId, tenantCode, taskInstId);
+    }
+
+    @Test
+    public void testOracle() throws Exception {
+        String nodeName = "oracle sql test";
+        String taskAppId = "2_13_25";
+        String tenantCode = "demo";
+        int taskInstId = 25;
+        sharedTestSqlTask(nodeName, taskAppId, tenantCode, taskInstId);
+    }
+
+    @Test
+    public void testSQLServer() throws Exception {
+        String nodeName = "SQL Server sql test";
+        String taskAppId = "3_14_27";
+        String tenantCode = "demo";
+        int taskInstId = 27;
+        sharedTestSqlTask(nodeName, taskAppId, tenantCode, taskInstId);
+    }
+
+    /**
+     * Basic test template for SQLTasks, mainly test different types of DBMS types
+     * @param nodeName node name for selected task
+     * @param taskAppId task app id
+     * @param tenantCode tenant code
+     * @param taskInstId task instance id
+     * @throws Exception
+     */
+    private void sharedTestSqlTask(String nodeName, String taskAppId, String tenantCode, int taskInstId) throws Exception {
         TaskProps taskProps = new TaskProps();
         taskProps.setTaskDir("");
         // processDefineId_processInstanceId_taskInstanceId
-        taskProps.setTaskAppId("51_11282_263978");
+        taskProps.setTaskAppId(taskAppId);
         // set tenant -> task execute linux user
-        taskProps.setTenantCode("hdfs");
+        taskProps.setTenantCode(tenantCode);
         taskProps.setTaskStartTime(new Date());
         taskProps.setTaskTimeout(360000);
-        taskProps.setTaskInstId(263978);
-        taskProps.setNodeName("mysql sql test");
+        taskProps.setTaskInstId(taskInstId);
+        taskProps.setNodeName(nodeName);
 
 
 
-        TaskInstance taskInstance = processDao.findTaskInstanceById(263978);
+        TaskInstance taskInstance = processDao.findTaskInstanceById(taskInstId);
 
         String taskJson = taskInstance.getTaskJson();
         TaskNode taskNode = JSONObject.parseObject(taskJson, TaskNode.class);
@@ -74,7 +116,7 @@ public class SqlExecutorTest {
 
 
         // custom logger
-        TaskLogger taskLogger = new TaskLogger(LoggerUtils.buildTaskId(TASK_PREFIX,
+        Logger taskLogger = LoggerFactory.getLogger(LoggerUtils.buildTaskId(LoggerUtils.TASK_LOGGER_INFO_PREFIX,
                 taskInstance.getProcessDefinitionId(),
                 taskInstance.getProcessInstanceId(),
                 taskInstance.getId()));

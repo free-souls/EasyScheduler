@@ -17,12 +17,15 @@
 package cn.escheduler.dao.model;
 
 import cn.escheduler.common.enums.UserType;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Date;
 
 /**
  * user
  */
+@ApiModel(description = "UserModelDesc")
 public class  User {
 
     /**
@@ -33,21 +36,25 @@ public class  User {
     /**
      * user name
      */
+    @ApiModelProperty(name = "userName", notes = "USER_NAME",dataType = "String",required = true)
     private String userName;
 
     /**
      * user password
      */
+    @ApiModelProperty(name = "userPassword", notes = "USER_PASSWORD",dataType = "String",required = true)
     private String userPassword;
 
     /**
      * mail
      */
+    @ApiModelProperty(name = "email", notes = "email",dataType = "String",required = true)
     private String email;
 
     /**
      * phone
      */
+    @ApiModelProperty(name = "phone", notes = "phone",dataType = "String",required = true)
     private String phone;
 
     /**
@@ -79,6 +86,12 @@ public class  User {
      * alert group
      */
     private String alertGroup;
+
+    /**
+     * user specified queue
+     */
+    private String queue;
+
     /**
      * create time
      */
@@ -194,23 +207,12 @@ public class  User {
         this.tenantCode = tenantCode;
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", userName='" + userName + '\'' +
-                ", userPassword='" + userPassword + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", userType=" + userType +
-                ", tenantId=" + tenantId +
-                ", tenantCode='" + tenantCode + '\'' +
-                ", tenantName='" + tenantName + '\'' +
-                ", queueName='" + queueName + '\'' +
-                ", alertGroup='" + alertGroup + '\'' +
-                ", createTime=" + createTime +
-                ", updateTime=" + updateTime +
-                '}';
+    public String getQueue() {
+        return queue;
+    }
+
+    public void setQueue(String queue) {
+        this.queue = queue;
     }
 
     @Override
@@ -236,5 +238,25 @@ public class  User {
         int result = id;
         result = 31 * result + userName.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", userName='" + userName + '\'' +
+                ", userPassword='" + userPassword + '\'' +
+                ", email='" + email + '\'' +
+                ", phone='" + phone + '\'' +
+                ", userType=" + userType +
+                ", tenantId=" + tenantId +
+                ", tenantCode='" + tenantCode + '\'' +
+                ", tenantName='" + tenantName + '\'' +
+                ", queueName='" + queueName + '\'' +
+                ", alertGroup='" + alertGroup + '\'' +
+                ", queue='" + queue + '\'' +
+                ", createTime=" + createTime +
+                ", updateTime=" + updateTime +
+                '}';
     }
 }

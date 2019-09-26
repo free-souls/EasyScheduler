@@ -32,13 +32,13 @@ export default {
    * set locations
    * */
   setLocations (state, payload) {
-    state.locations = Object.assign(state.locations, {}, payload)
+    state.locations = payload
   },
   /**
    * add locations
    * */
   addLocations (state, payload) {
-    state.locations = payload
+    state.locations = Object.assign(state.locations, {}, payload)
   },
   /**
    * set connects
@@ -51,6 +51,18 @@ export default {
    */
   setName (state, payload) {
     state.name = payload
+  },
+  /**
+   * set timeout
+   */
+  setTimeout (state, payload) {
+    state.timeout = payload
+  },
+  /**
+   * set tenantId
+   */
+  setTenantId (state, payload) {
+    state.tenantId = payload
   },
   /**
    * set global params
@@ -93,8 +105,11 @@ export default {
     state.tasks = payload && payload.tasks || []
     state.name = payload && payload.name || ''
     state.desc = payload && payload.desc || ''
+    state.timeout = payload && payload.timeout || 0
+    state.tenantId = payload && payload.tenantId || -1
     state.processListS = payload && payload.processListS || []
     state.resourcesListS = payload && payload.resourcesListS || []
+    state.projectListS = payload && payload.projectListS || []
     state.isDetails = payload && payload.isDetails || false
     state.runFlag = payload && payload.runFlag || ''
     state.locations = payload && payload.locations || {}

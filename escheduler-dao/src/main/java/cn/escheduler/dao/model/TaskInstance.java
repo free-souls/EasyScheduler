@@ -182,6 +182,21 @@ public class TaskInstance {
     private String dependentResult;
 
 
+    /**
+     * worker group id
+     * @return
+     */
+    private int workerGroupId;
+
+
+
+    public void  init(String host,Date startTime,String executePath){
+        this.host = host;
+        this.startTime = startTime;
+        this.executePath = executePath;
+    }
+
+
     public ProcessInstance getProcessInstance() {
         return processInstance;
     }
@@ -415,8 +430,12 @@ public class TaskInstance {
         if(this.isSubProcess()){
             return false;
         }
-        return (this.getState().typeIsFailure()
+        if(this.getState() == ExecutionStatus.NEED_FAULT_TOLERANCE){
+            return true;
+        }else {
+            return (this.getState().typeIsFailure()
                 && this.getRetryTimes() < this.getMaxRetryTimes());
+        }
     }
 
     public void setDependency(String dependency) {
@@ -437,6 +456,14 @@ public class TaskInstance {
 
     public void setProcessInstancePriority(Priority processInstancePriority) {
         this.processInstancePriority = processInstancePriority;
+    }
+
+    public int getWorkerGroupId() {
+        return workerGroupId;
+    }
+
+    public void setWorkerGroupId(int workerGroupId) {
+        this.workerGroupId = workerGroupId;
     }
 
     @Override
@@ -470,6 +497,7 @@ public class TaskInstance {
                 ", retryInterval=" + retryInterval +
                 ", taskInstancePriority=" + taskInstancePriority +
                 ", processInstancePriority=" + processInstancePriority +
+                ", workGroupId=" + workerGroupId +
                 '}';
     }
 

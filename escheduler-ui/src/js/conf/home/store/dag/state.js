@@ -29,6 +29,10 @@ export default {
   globalParams: [],
   // Node information
   tasks: [],
+  // Timeout alarm
+  timeout: 0,
+  // tenant id
+  tenantId:-1,
   // Node location information
   locations: {},
   // Node-to-node connection
@@ -43,6 +47,8 @@ export default {
   syncDefine: true,
   // tasks processList
   processListS: [],
+  // projectList
+  projectListS: [],
   // tasks resourcesList
   resourcesListS: [],
   // tasks datasource Type
@@ -66,6 +72,21 @@ export default {
       id: 3,
       code: 'SPARK',
       disabled: false
+    },
+    {
+      id: 4,
+      code: 'CLICKHOUSE',
+      disabled: false
+    },
+    {
+      id: 5,
+      code: 'ORACLE',
+      disabled: false
+    },
+    {
+      id: 6,
+      code: 'SQLSERVER',
+      disabled: false
     }
   ],
   // Alarm interface
@@ -73,5 +94,8 @@ export default {
   // Process instance list{ view a single record }
   instanceListS: [],
   // Operating state
-  isDetails: false
+  isDetails: false,
+  startup: {
+
+  }
 }

@@ -47,6 +47,7 @@ public class UserMapperProvider {
                 VALUES("`phone`", "#{user.phone}");
                 VALUES("`user_type`", EnumFieldUtil.genFieldStr("user.userType", UserType.class));
                 VALUES("`tenant_id`", "#{user.tenantId}");
+                VALUES("`queue`", "#{user.queue}");
                 VALUES("`create_time`", "#{user.createTime}");
                 VALUES("`update_time`", "#{user.updateTime}");
             }
@@ -86,6 +87,7 @@ public class UserMapperProvider {
                 SET("`phone`=#{user.phone}");
                 SET("`user_type`="+EnumFieldUtil.genFieldStr("user.userType", UserType.class));
                 SET("`tenant_id`=#{user.tenantId}");
+                SET("`queue`=#{user.queue}");
                 SET("`create_time`=#{user.createTime}");
                 SET("`update_time`=#{user.updateTime}");
 
@@ -116,7 +118,7 @@ public class UserMapperProvider {
      *
      * @return
      */
-    public String queryAllUsers() {
+    public String queryAllGeneralUsers() {
         return new SQL() {
             {
                 SELECT("*");
@@ -127,6 +129,22 @@ public class UserMapperProvider {
             }
         }.toString();
     }
+
+    /**
+     * query all user list
+     *
+     * @return
+     */
+    public String queryAllUsers() {
+        return new SQL() {
+            {
+                SELECT("*");
+                FROM(TABLE_NAME);
+            }
+        }.toString();
+    }
+
+
 
     /**
      * check user name and password
@@ -169,7 +187,6 @@ public class UserMapperProvider {
         return new SQL() {{
             SELECT("count(0)");
             FROM(TABLE_NAME);
-            WHERE("user_type = 1");
             Object searchVal = parameter.get("searchVal");
             if(searchVal != null && StringUtils.isNotEmpty(searchVal.toString())){
                 WHERE( " user_name like concat('%', #{searchVal}, '%') ");
@@ -185,14 +202,19 @@ public class UserMapperProvider {
     public String queryUserPaging(Map<String, Object> parameter) {
         return new SQL() {
             {
-                SELECT("u.*,t.tenant_name as tenantName,q.queue_name as queueName");
-                FROM(TABLE_NAME +" u,t_escheduler_tenant t,t_escheduler_queue q");
-                WHERE("u.user_type = 1 AND u.tenant_id = t.id and t.queue_id = q.id");
+                SELECT("u.id,u.user_name,u.user_password,u.user_type,u.email,u.phone,u.tenant_id,u.create_time,u.update_time,t.tenant_name," +
+                        "case when u.queue <> '' then u.queue else q.queue_name end as queue," +
+                        "q.queue_name");
+                FROM(TABLE_NAME + " u ");
+                LEFT_OUTER_JOIN("t_escheduler_tenant t on u.tenant_id = t.id");
+                LEFT_OUTER_JOIN("t_escheduler_queue q on t.queue_id = q.id");
                 Object searchVal = parameter.get("searchVal");
                 if(searchVal != null && StringUtils.isNotEmpty(searchVal.toString())){
                     WHERE( " u.user_name like concat('%', #{searchVal}, '%') ");
                 }
                 ORDER_BY(" u.update_time desc limit #{offset},#{pageSize} ");
+
+
             }
         }.toString();
 
@@ -206,7 +228,8 @@ public class UserMapperProvider {
     public String queryDetailsById(Map<String, Object> parameter) {
         return new SQL() {
             {
-                SELECT("u.*,q.queue_name as queueName,t.tenant_name as tenantName");
+                SELECT("u.*, t.tenant_name," +
+                        "case when u.queue <> '' then u.queue else q.queue_name end as queue_name");
 
                 FROM(TABLE_NAME + " u,t_escheduler_tenant t,t_escheduler_queue q");
 
@@ -240,9 +263,41 @@ public class UserMapperProvider {
     public String queryTenantCodeByUserId(Map<String, Object> parameter) {
         return new SQL() {
             {
-                SELECT("u.*,t.tenant_code as tenantCode");
+                SELECT("u.*,t.tenant_code");
                 FROM(TABLE_NAME + " u,t_escheduler_tenant t");
                 WHERE("u.tenant_id = t.id AND u.id = #{userId}");
+            }
+        }.toString();
+    }
+
+
+    /**
+     * query tenant code by user id
+     * @param parameter
+     * @return
+     */
+    public String queryQueueByProcessInstanceId(Map<String, Object> parameter) {
+        return new SQL() {
+            {
+                SELECT("queue");
+                FROM(TABLE_NAME + " u,t_escheduler_process_instance p");
+                WHERE("u.id = p.executor_id and p.id=#{processInstanceId}");
+            }
+        }.toString();
+    }
+
+
+    /**
+     * query user by id
+     * @param parameter
+     * @return
+     */
+    public String queryUserByToken(Map<String, Object> parameter) {
+        return new SQL() {
+            {
+                SELECT("u.*");
+                FROM(TABLE_NAME + " u ,t_escheduler_access_token t");
+                WHERE(" u.id = t.user_id and token=#{token} and t.expire_time > NOW()");
             }
         }.toString();
     }

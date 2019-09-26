@@ -29,6 +29,14 @@ public enum TaskType {
      * 5 SPARK
      * 6 PYTHON
      * 7 DEPENDENT
+     * 8 FLINK
+     * 9 HTTP
      */
-    SHELL,SQL, SUB_PROCESS,PROCEDURE,MR,SPARK,PYTHON,DEPENDENT
+    SHELL,SQL, SUB_PROCESS,PROCEDURE,MR,SPARK,PYTHON,DEPENDENT,FLINK,HTTP;
+
+    public static boolean typeIsNormalTask(String typeName) {
+        TaskType taskType = TaskType.valueOf(typeName);
+        return !(taskType == TaskType.SUB_PROCESS || taskType == TaskType.DEPENDENT);
+    }
+
 }

@@ -17,6 +17,9 @@
 package cn.escheduler.dao;
 
 import cn.escheduler.common.Constants;
+import cn.escheduler.common.enums.TaskRecordStatus;
+import cn.escheduler.common.utils.CollectionUtils;
+import cn.escheduler.common.utils.DateUtils;
 import cn.escheduler.dao.model.TaskRecord;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -27,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -39,20 +43,30 @@ public class TaskRecordDao {
 
     private static Logger logger = LoggerFactory.getLogger(TaskRecordDao.class.getName());
 
+
+
     /**
-     * 加载配置文件
+     * load conf file
      */
     private static Configuration conf;
 
     static {
         try {
-            conf = new PropertiesConfiguration(Constants.TASK_RECORD_PROPERTIES_PATH);
+            conf = new PropertiesConfiguration(Constants.DATA_SOURCE_PROPERTIES);
         }catch (ConfigurationException e){
             logger.error("load configuration excetpion",e);
             System.exit(1);
         }
     }
 
+
+    /**
+     *  get task record flag
+     * @return
+     */
+    public static boolean getTaskRecordFlag(){
+       return conf.getBoolean(Constants.TASK_RECORD_FLAG);
+    }
     /**
      * create connection
      * @return
@@ -133,7 +147,7 @@ public class TaskRecordDao {
      * @param filterMap
      * @return
      */
-    public static int countTaskRecord(Map<String, String> filterMap){
+    public static int countTaskRecord(Map<String, String> filterMap, String table){
 
         int count = 0;
         Connection conn = null;
@@ -142,7 +156,7 @@ public class TaskRecordDao {
             if(conn == null){
                 return count;
             }
-            String sql = "select count(1) as count from eamp_hive_log_hd";
+            String sql = String.format("select count(1) as count from %s", table);
             sql += getWhereString(filterMap);
             PreparedStatement pstmt;
             pstmt = conn.prepareStatement(sql);
@@ -170,9 +184,9 @@ public class TaskRecordDao {
      * @param filterMap
      * @return
      */
-    public static List<TaskRecord> queryAllTaskRecord(Map<String,String> filterMap ) {
+    public static List<TaskRecord> queryAllTaskRecord(Map<String,String> filterMap , String table) {
 
-        String sql = "select * from eamp_hive_log_hd ";
+        String sql = String.format("select * from  %s", table);
         sql += getWhereString(filterMap);
 
         int offset = Integer.parseInt(filterMap.get("offset"));
@@ -201,8 +215,8 @@ public class TaskRecordDao {
         taskRecord.setProcId(resultSet.getInt("PROC_ID"));
         taskRecord.setProcName(resultSet.getString("PROC_NAME"));
         taskRecord.setProcDate(resultSet.getString("PROC_DATE"));
-        taskRecord.setStartDate(resultSet.getDate("STARTDATE"));
-        taskRecord.setEndDate(resultSet.getDate("ENDDATE"));
+        taskRecord.setStartTime(DateUtils.stringToDate(resultSet.getString("STARTDATE")));
+        taskRecord.setEndTime(DateUtils.stringToDate(resultSet.getString("ENDDATE")));
         taskRecord.setResult(resultSet.getString("RESULT"));
         taskRecord.setDuration(resultSet.getInt("DURATION"));
         taskRecord.setNote(resultSet.getString("NOTE"));
@@ -250,4 +264,37 @@ public class TaskRecordDao {
         }
         return recordList;
     }
+
+    /**
+     * according to procname and procdate query task record
+     * @param procName
+     * @param procDate
+     * @return
+     */
+    public static TaskRecordStatus getTaskRecordState(String procName,String procDate){
+        String sql = String.format("SELECT * FROM eamp_hive_log_hd WHERE PROC_NAME='%s' and PROC_DATE like '%s'"
+                ,procName,procDate + "%");
+        List<TaskRecord> taskRecordList = getQueryResult(sql);
+
+        // contains no record and sql exception
+        if (CollectionUtils.isEmpty(taskRecordList)){
+            // exception
+            return TaskRecordStatus.EXCEPTION;
+        }else if (taskRecordList.size() > 1){
+            return TaskRecordStatus.EXCEPTION;
+        }else {
+            TaskRecord taskRecord = taskRecordList.get(0);
+            if (taskRecord == null){
+                return TaskRecordStatus.EXCEPTION;
+            }
+            Long targetRowCount = taskRecord.getTargetRowCount();
+            if (targetRowCount <= 0){
+                return TaskRecordStatus.FAILURE;
+            }else {
+                return TaskRecordStatus.SUCCESS;
+            }
+
+        }
+    }
+
 }

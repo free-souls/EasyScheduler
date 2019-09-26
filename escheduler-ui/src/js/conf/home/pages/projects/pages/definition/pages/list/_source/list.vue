@@ -1,35 +1,39 @@
 <template>
-  <div class="list-model">
+  <div class="list-model" style="position: relative;">
     <div class="table-box">
       <table class="fixed">
         <tr>
-          <th>
-            <span>{{$t('编号')}}</span>
+          <th width="50">
+            <x-checkbox @on-change="_topCheckBoxClick" v-model="checkAll"></x-checkbox>
+          </th>
+          <th width="40">
+            <span>{{$t('#')}}</span>
           </th>
           <th>
-            <span>{{$t('工作流名称')}}</span>
+            <span>{{$t('Process Name')}}</span>
           </th>
           <th width="50">
-            <span>{{$t('状态')}}</span>
+            <span>{{$t('State')}}</span>
           </th>
-          <th width="140">
-            <span>{{$t('创建时间')}}</span>
+          <th width="130">
+            <span>{{$t('Create Time')}}</span>
           </th>
-          <th width="140">
-            <span>{{$t('更新时间')}}</span>
+          <th width="130">
+            <span>{{$t('Update Time')}}</span>
           </th>
           <th>
-            <span>{{$t('描述')}}</span>
+            <span>{{$t('Description')}}</span>
           </th>
           <th width="90">
-            <span>{{$t('定时状态')}}</span>
+            <span>{{$t('Timing state')}}</span>
           </th>
-          <th width="220">
-            <span>{{$t('操作')}}</span>
+          <th width="240">
+            <span>{{$t('Operation')}}</span>
           </th>
         </tr>
         <tr v-for="(item, $index) in list" :key="item.id">
-          <td>
+          <td width="50"><x-checkbox v-model="item.isCheck" :disabled="item.releaseState === 'ONLINE'" @on-change="_arrDelChange"></x-checkbox></td>
+          <td width="50">
             <span>{{parseInt(pageNo === 1 ? ($index + 1) : (($index + 1) + (pageSize * (pageNo - 1))))}}</span>
           </td>
           <td>
@@ -49,22 +53,60 @@
           </td>
           <td><span class="ellipsis">{{item.desc}}</span></td>
           <td>
-            <span v-if="item.scheduleReleaseState === 'OFFLINE'">{{$t('下线')}}</span>
-            <span v-if="item.scheduleReleaseState === 'ONLINE'">{{$t('上线')}}</span>
+            <span v-if="item.scheduleReleaseState === 'OFFLINE'">{{$t('offline')}}</span>
+            <span v-if="item.scheduleReleaseState === 'ONLINE'">{{$t('online')}}</span>
             <span v-if="!item.scheduleReleaseState">-</span>
           </td>
           <td>
-            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('编辑')" @click="_edit(item)" :disabled="item.releaseState === 'ONLINE'" v-ps="['GENERAL_USER']" icon="iconfont icon-bianji"><!--{{$t('编辑')}}--></x-button>
-            <x-button type="success" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('启动')" @click="_start(item)" :disabled="item.releaseState !== 'ONLINE'" v-ps="['GENERAL_USER']" icon="iconfont icon-qidong"><!--{{$t('启动')}}--></x-button>
-            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('定时')" @click="_timing(item)" :disabled="item.releaseState !== 'ONLINE' || item.scheduleReleaseState !== null" v-ps="['GENERAL_USER']" icon="iconfont icon-timer"><!--{{$t('定时')}}--></x-button>
-            <x-button type="error" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('下线')" @click="_downline(item)" v-if="item.releaseState === 'ONLINE'" v-ps="['GENERAL_USER']" icon="iconfont icon-erji-xiaxianjilu"><!--{{$t('下线')}}--></x-button>
-            <x-button type="warning" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('上线')" @click="_poponline(item)" v-if="item.releaseState === 'OFFLINE'" v-ps="['GENERAL_USER']" icon="iconfont icon-erji-xiaxianjilu-copy"><!--{{$t('上线')}}--></x-button>
-            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('定时管理')" @click="_timingManage(item)" :disabled="item.releaseState !== 'ONLINE'" v-ps="['GENERAL_USER']" icon="iconfont icon-paibanguanli"><!--{{$t('定时管理')}}--></x-button>
-            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('树形图')" @click="_treeView(item)"  icon="iconfont icon-juxingkaobei"><!--{{$t('树形图')}}--></x-button>
+            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('Edit')" @click="_edit(item)" :disabled="item.releaseState === 'ONLINE'"  icon="iconfont icon-bianji"><!--{{$t('编辑')}}--></x-button>
+            <x-button type="success" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('Start')" @click="_start(item)" :disabled="item.releaseState !== 'ONLINE'"  icon="iconfont icon-qidong"><!--{{$t('启动')}}--></x-button>
+            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('Timing')" @click="_timing(item)" :disabled="item.releaseState !== 'ONLINE' || item.scheduleReleaseState !== null"  icon="iconfont icon-timer"><!--{{$t('定时')}}--></x-button>
+            <x-button type="warning" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('online')" @click="_poponline(item)" v-if="item.releaseState === 'OFFLINE'"  icon="iconfont icon-erji-xiaxianjilu-copy"><!--{{$t('下线')}}--></x-button>
+            <x-button type="error" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('offline')" @click="_downline(item)" v-if="item.releaseState === 'ONLINE'"  icon="iconfont icon-erji-xiaxianjilu"><!--{{$t('上线')}}--></x-button>
+            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('Cron Manage')" @click="_timingManage(item)" :disabled="item.releaseState !== 'ONLINE'"  icon="iconfont icon-paibanguanli"><!--{{$t('定时管理')}}--></x-button>
+            <x-poptip
+              :ref="'poptip-delete-' + $index"
+              placement="bottom-end"
+              width="90">
+              <p>{{$t('Delete?')}}</p>
+              <div style="text-align: right; margin: 0;padding-top: 4px;">
+                <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('Cancel')}}</x-button>
+                <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('Confirm')}}</x-button>
+              </div>
+              <template slot="reference">
+                <x-button
+                  icon="iconfont icon-shanchu"
+                  type="error"
+                  shape="circle"
+                  size="xsmall"
+                  :disabled="item.releaseState === 'ONLINE'"
+                  data-toggle="tooltip"
+                  :title="$t('delete')">
+                </x-button>
+              </template>
+            </x-poptip>
+            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('TreeView')" @click="_treeView(item)"  icon="iconfont icon-juxingkaobei"><!--{{$t('树形图')}}--></x-button>
+            <x-button type="info" shape="circle" size="xsmall" data-toggle="tooltip" :title="$t('Export')" @click="_export(item)"  icon="iconfont icon-download"><!--{{$t('导出')}}--></x-button>
+
           </td>
         </tr>
       </table>
     </div>
+    <x-poptip
+            v-show="strDelete !== ''"
+            ref="poptipDeleteAll"
+            placement="bottom-start"
+            width="90">
+      <p>{{$t('Delete?')}}</p>
+      <div style="text-align: right; margin: 0;padding-top: 4px;">
+        <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete(-1)">{{$t('Cancel')}}</x-button>
+        <x-button type="primary" size="xsmall" shape="circle" @click="_delete({},-1)">{{$t('Confirm')}}</x-button>
+      </div>
+      <template slot="reference">
+        <x-button size="xsmall" style="position: absolute; bottom: -48px; left: 22px;" >{{$t('Delete')}}</x-button>
+      </template>
+    </x-poptip>
+
   </div>
 </template>
 <script>
@@ -72,14 +114,15 @@
   import mStart from './start'
   import mTiming from './timing'
   import { mapActions } from 'vuex'
-  import '@/module/filter/formatDate'
   import { publishStatus } from '@/conf/home/pages/dag/_source/config'
 
   export default {
     name: 'definition-list',
     data () {
       return {
-        list: []
+        list: [],
+        strDelete: '',
+        checkAll: false
       }
     },
     props: {
@@ -88,7 +131,7 @@
       pageSize: Number
     },
     methods: {
-      ...mapActions('dag', ['editProcessState', 'getStartCheck', 'getReceiver']),
+      ...mapActions('dag', ['editProcessState', 'getStartCheck', 'getReceiver', 'deleteDefinition', 'batchDeleteDefinition','exportDefinition']),
       _rtPublishStatus (code) {
         return _.filter(publishStatus, v => v.code === code)[0].desc
       },
@@ -181,6 +224,37 @@
         this.$router.push({ path: `/projects/definition/list/timing/${item.id}` })
       },
       /**
+       * Close the delete layer
+       */
+      _closeDelete (i) {
+        if (i > 0) {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+        }else{
+          this.$refs['poptipDeleteAll'].doClose()
+        }
+      },
+      /**
+       * delete
+       */
+      _delete (item, i) {
+        // remove tow++
+        if (i < 0) {
+          this._batchDelete()
+          return
+        }
+        // remove one
+        this.deleteDefinition({
+          processDefinitionId: item.id
+        }).then(res => {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+          this._onUpdate()
+          this.$message.success(res.msg)
+        }).catch(e => {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+          this.$message.error(e.msg || '')
+        })
+      },
+      /**
        * edit
        */
       _edit (item) {
@@ -204,6 +278,14 @@
           releaseState: 1
         })
       },
+      _export (item) {
+        this.exportDefinition({
+          processDefinitionId: item.id,
+          processDefinitionName: item.name
+        }).catch(e => {
+          this.$message.error(e.msg || '')
+        })
+      },
       /**
        * Edit state
        */
@@ -218,20 +300,65 @@
       },
       _onUpdate () {
         this.$emit('on-update')
+      },
+      /**
+       * click the select-all checkbox
+       */
+      _topCheckBoxClick (is) {
+        _.map(this.list , v => v.isCheck = v.releaseState === 'ONLINE' ? false : is)
+        this._arrDelChange()
+      },
+      /**
+       * the array that to be delete
+       */
+      _arrDelChange (v) {
+        let arr = []
+        this.list.forEach((item)=>{
+          if (item.isCheck) {
+            arr.push(item.id)
+          }
+        })
+        this.strDelete = _.join(arr, ',')
+        if (v === false) {
+          this.checkAll = false
+        }
+      },
+      /**
+       * batch delete
+       */
+      _batchDelete () {
+        this.$refs['poptipDeleteAll'].doClose()
+        this.batchDeleteDefinition({
+          processDefinitionIds: this.strDelete
+        }).then(res => {
+          this._onUpdate()
+          this.checkAll = false
+          this.$message.success(res.msg)
+        }).catch(e => {
+          this.checkAll = false
+          this.$message.error(e.msg || '')
+        })
       }
     },
     watch: {
-      processList (a) {
-        this.list = []
-        setTimeout(() => {
-          this.list = a
-        })
+      processList: {
+        handler (a) {
+          this.checkAll = false
+          this.list = []
+          setTimeout(() => {
+            this.list = _.cloneDeep(a)
+          })
+        },
+        immediate: true,
+        deep: true
+      },
+      pageNo () {
+        this.strDelete = ''
       }
     },
     created () {
     },
     mounted () {
-      this.list = this.processList
     },
     components: { }
   }

@@ -100,6 +100,30 @@ export default {
     })
   },
   /**
+   * user list expect admin
+   */
+  getUsersList ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`users/list`, payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * user all  list
+   */
+  getUsersAll ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`users/list-all`, payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
    * Update user
    * @param "id":int,
    * @param "userName":string,
@@ -140,7 +164,7 @@ export default {
     }
 
     let param = {}
-    // Management user
+    // Manage user
     if (o.type === 'user') {
       param.alertgroupId = payload.id
     } else {
@@ -216,7 +240,13 @@ export default {
   getTenantList ({ state }, payload) {
     return new Promise((resolve, reject) => {
       io.get(`tenant/list`, payload, res => {
-        resolve(res.data)
+        let list=res.data
+        list.unshift({
+          id: -1,
+          tenantName: 'Default'
+        })
+        state.tenantAllList = list
+        resolve(list)
       }).catch(e => {
         reject(e)
       })
@@ -348,6 +378,102 @@ export default {
   getProcessWorkerList ({ state }, payload) {
     return new Promise((resolve, reject) => {
       io.get(`process/worker/list`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * get queue list pages
+   */
+  getQueueListP ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`queue/list-paging`, payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * create queue
+   */
+  createQueueQ ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post(`queue/create`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * update queue
+   */
+  updateQueueQ ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post(`queue/update`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * update queue
+   */
+  verifyQueueQ ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post(`queue/verify-queue`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * get worker groups
+   */
+  getWorkerGroups ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`worker-group/list-paging`, payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  /**
+   * get worker groups all
+   */
+  getWorkerGroupsAll ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`worker-group/all-groups`, payload, res => {
+        let list = res.data
+        list.unshift({
+          id: -1,
+          name: 'Default'
+        })
+        state.workerGroupsListAll = list
+        resolve(list)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  saveWorkerGroups ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.post(`worker-group/save`, payload, res => {
+        resolve(res)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  deleteWorkerGroups ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get(`worker-group/delete-by-id`, payload, res => {
         resolve(res)
       }).catch(e => {
         reject(e)

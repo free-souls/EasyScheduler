@@ -1,16 +1,16 @@
 <template>
   <div class="dependence-model">
     <m-list-box>
-      <div slot="text">{{$t('添加依赖')}}</div>
+      <div slot="text">{{$t('Add dependency')}}</div>
       <div slot="content">
         <div class="dep-opt">
           <a href="javascript:"
              @click="!isDetails && _addDep()"
              class="add-dep">
-            <i v-if="!isLoading" class="iconfont" :class="_isDetails" data-toggle="tooltip" :title="$t('添加')">
+            <i v-if="!isLoading" class="iconfont" :class="_isDetails" data-toggle="tooltip" :title="$t('Add')">
               &#xe636;
             </i>
-            <i v-if="isLoading" class="iconfont fa fa-spin" data-toggle="tooltip" :title="$t('添加')">
+            <i v-if="isLoading" class="iconfont fa fa-spin" data-toggle="tooltip" :title="$t('Add')">
               &#xe6af;
             </i>
           </a>
@@ -20,25 +20,27 @@
                   class="dep-relation"
                   @click="!isDetails && _setGlobalRelation()"
                   v-if="dependTaskList.length">
-            {{relation === 'AND' ? $t('且') : $t('或')}}
+            {{relation === 'AND' ? $t('and') : $t('or')}}
           </span>
-          <div class="dep-list" v-for="(el,$index) in dependTaskList">
+          <div class="dep-list" v-for="(el,$index) in dependTaskList" :key='$index'>
             <span class="dep-line-pie"
                   v-if="el.dependItemList.length"
                   @click="!isDetails && _setRelation($index)">
-              {{el.relation === 'AND' ? $t('且') : $t('或')}}
+              {{el.relation === 'AND' ? $t('and') : $t('or')}}
             </span>
             <i class="iconfont dep-delete"
                data-toggle="tooltip"
                data-container="body"
                :class="_isDetails"
                @click="!isDetails && _deleteDep($index)"
-               :title="$t('删除')" >
+               :title="$t('delete')" >
               &#xe611;
             </i>
             <m-depend-item-list
+                    :dependTaskList='dependTaskList'
                     v-model="el.dependItemList"
                     @on-delete-all="_onDeleteAll"
+                    @getDependTaskList="getDependTaskList"
                     :index="$index">
             </m-depend-item-list>
           </div>
@@ -84,10 +86,17 @@
         $('body').find('.tooltip.fade.top.in').remove()
       },
       _onDeleteAll (i) {
-        this._deleteDep(i)
+        this.dependTaskList.map((item,i)=>{
+          if(item.dependItemList.length === 0){
+            this.dependTaskList.splice(i,1)
+          }
+        })
       },
       _setGlobalRelation () {
         this.relation = this.relation === 'AND' ? 'OR' : 'AND'
+      },
+      getDependTaskList(i){
+        // console.log('getDependTaskList',i)
       },
       _setRelation (i) {
         this.dependTaskList[i].relation = this.dependTaskList[i].relation === 'AND' ? 'OR' : 'AND'

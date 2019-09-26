@@ -35,9 +35,17 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>sql</directory>
+			<directory>escheduler-ui/dist</directory>
 			<includes>
 				<include>**/*.*</include>
+			</includes>
+			<outputDirectory>./ui</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>sql</directory>
+			<includes>
+				<include>**/*</include>
 			</includes>
 			<outputDirectory>./sql</outputDirectory>
 		</fileSet>
@@ -57,6 +65,16 @@
 				<include>env/*.*</include>
 			</includes>
 			<outputDirectory>./conf</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>script</directory>
+			<includes>
+				<include>start-all.sh</include>
+				<include>stop-all.sh</include>
+				<include>escheduler-daemon.sh</include>
+			</includes>
+			<outputDirectory>./bin</outputDirectory>
 		</fileSet>
 
 		<fileSet>

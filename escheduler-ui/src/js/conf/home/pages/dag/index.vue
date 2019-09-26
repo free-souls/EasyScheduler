@@ -24,7 +24,8 @@
     props: {},
     methods: {
       ...mapMutations('dag', ['resetParams']),
-      ...mapActions('dag', ['getProcessList', 'getResourcesList']),
+      ...mapActions('dag', ['getProcessList','getProjectList', 'getResourcesList']),
+      ...mapActions('security', ['getTenantList','getWorkerGroupsAll']),
       /**
        * init
        */
@@ -36,8 +37,13 @@
         Promise.all([
           // get process definition
           this.getProcessList(),
+          // get project
+          this.getProjectList(),
           // get resource
-          this.getResourcesList()
+          this.getResourcesList(),
+          // get worker group list
+          this.getWorkerGroupsAll(),
+          this.getTenantList()
         ]).then((data) => {
           this.isLoading = false
           // Whether to pop up the box?

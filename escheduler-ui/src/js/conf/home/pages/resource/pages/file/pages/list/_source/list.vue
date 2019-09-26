@@ -4,25 +4,25 @@
       <table class="fixed">
         <tr>
           <th>
-            <span>{{$t('编号')}}</span>
+            <span>{{$t('#')}}</span>
           </th>
           <th>
-            <span>{{$t('名称')}}</span>
+            <span>{{$t('Name')}}</span>
           </th>
           <th>
-            <span>{{$t('文件名称')}}</span>
+            <span>{{$t('File Name')}}</span>
           </th>
           <th>
-            <span>{{$t('描述')}}</span>
+            <span>{{$t('Description')}}</span>
           </th>
           <th width="100">
-            <span>{{$t('大小')}}</span>
+            <span>{{$t('Size')}}</span>
           </th>
           <th width="140">
-            <span>{{$t('更新时间')}}</span>
+            <span>{{$t('Update Time')}}</span>
           </th>
           <th width="140">
-            <span>{{$t('操作')}}</span>
+            <span>{{$t('Operation')}}</span>
           </th>
         </tr>
         <tr v-for="(item, $index) in list" :key="item.id">
@@ -48,11 +48,10 @@
                     shape="circle"
                     size="xsmall"
                     data-toggle="tooltip"
-                    :title="$t('编辑')"
+                    :title="$t('Edit')"
                     :disabled="_rtDisb(item)"
                     @click="_edit(item,$index)"
-                    icon="iconfont icon-bianjixiugai"
-                    v-ps="['GENERAL_USER']">
+                    icon="iconfont icon-bianjixiugai">
             </x-button>
             <x-button
                     type="info"
@@ -60,9 +59,8 @@
                     size="xsmall"
                     icon="iconfont icon-wendangxiugai"
                     data-toggle="tooltip"
-                    :title="$t('重命名')"
-                    @click="_rename(item,$index)"
-                    v-ps="['GENERAL_USER']">
+                    :title="$t('Rename')"
+                    @click="_rename(item,$index)">
             </x-button>
 
             <x-button
@@ -70,20 +68,19 @@
                     shape="circle"
                     size="xsmall"
                     data-toggle="tooltip"
-                    :title="$t('下载')"
+                    :title="$t('Download')"
                     @click="_downloadFile(item)"
-                    icon="iconfont icon-download"
-                    v-ps="['GENERAL_USER']">
+                    icon="iconfont icon-download">
             </x-button>
 
             <x-poptip
                     :ref="'poptip-' + $index"
                     placement="bottom-end"
                     width="90">
-              <p>{{$t('确定删除吗?')}}</p>
+              <p>{{$t('Delete?')}}</p>
               <div style="text-align: right; margin: 0;padding-top: 4px;">
-                <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('取消')}}</x-button>
-                <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('确定')}}</x-button>
+                <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('Cancel')}}</x-button>
+                <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('Confirm')}}</x-button>
               </div>
               <template slot="reference">
                 <x-button
@@ -92,8 +89,7 @@
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('删除')"
-                        v-ps="['GENERAL_USER']">
+                        :title="$t('delete')">
                 </x-button>
               </template>
             </x-poptip>
@@ -107,7 +103,6 @@
   import _ from 'lodash'
   import mRename from './rename'
   import { mapActions } from 'vuex'
-  import '@/module/filter/formatDate'
   import { filtTypeArr } from '../../_source/common'
   import { bytesToSize } from '@/module/util/util'
   import { downloadFile } from '@/module/download'

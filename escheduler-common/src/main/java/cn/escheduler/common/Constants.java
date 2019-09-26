@@ -60,6 +60,23 @@ public final class Constants {
      */
     public static final String FS_DEFAULTFS = "fs.defaultFS";
 
+
+    /**
+     * fs s3a endpoint
+     */
+    public static final String FS_S3A_ENDPOINT = "fs.s3a.endpoint";
+
+    /**
+     * fs s3a access key
+     */
+    public static final String FS_S3A_ACCESS_KEY = "fs.s3a.access.key";
+
+    /**
+     * fs s3a secret key
+     */
+    public static final String FS_S3A_SECRET_KEY = "fs.s3a.secret.key";
+
+
     /**
      * yarn.resourcemanager.ha.rm.idsfs.defaultFS
      */
@@ -71,24 +88,10 @@ public final class Constants {
     public static final String YARN_APPLICATION_STATUS_ADDRESS = "yarn.application.status.address";
 
     /**
-     * spring.redis.maxIdle
+     * hdfs configuration
+     * hdfs.root.user
      */
-    public static final String SPRING_REDIS_MAXIDLE = "spring.redis.maxIdle";
-
-    /**
-     * spring.redis.maxTotal
-     */
-    public static final String SPRING_REDIS_MAXTOTAL = "spring.redis.maxTotal";
-
-    /**
-     * spring.redis.host
-     */
-    public static final String SPRING_REDIS_HOST = "spring.redis.host";
-
-    /**
-     * spring.redis.port
-     */
-    public static final String SPRING_REDIS_PORT = "spring.redis.port";
+    public static final String HDFS_ROOT_USER = "hdfs.root.user";
 
     /**
      * hdfs configuration
@@ -116,10 +119,11 @@ public final class Constants {
      */
     public static final String ESCHEDULER_ENV_PATH = "escheduler.env.path";
 
+
     /**
-     * escheduler.env.py
+     * python home
      */
-    public static final String ESCHEDULER_ENV_PY = "escheduler.env.py";
+    public static final String PYTHON_HOME="PYTHON_HOME";
 
     /**
      * resource.view.suffixs
@@ -132,9 +136,9 @@ public final class Constants {
     public static final String DEVELOPMENT_STATE = "development.state";
 
     /**
-     * hdfs.startup.state
+     * res.upload.startup.type
      */
-    public static final String HDFS_STARTUP_STATE = "hdfs.startup.state";
+    public static final String RES_UPLOAD_STARTUP_TYPE = "res.upload.startup.type";
 
     /**
      * zookeeper quorum
@@ -177,6 +181,11 @@ public final class Constants {
     public static final String ZOOKEEPER_ESCHEDULER_LOCK_FAILOVER_WORKERS = "zookeeper.escheduler.lock.failover.workers";
 
     /**
+     * MasterServer startup  failover runing and fault tolerance process
+     */
+    public static final String ZOOKEEPER_ESCHEDULER_LOCK_FAILOVER_STARTUP_MASTERS = "zookeeper.escheduler.lock.failover.startup.masters";
+
+    /**
      * need send warn times when master server or worker server failover
      */
     public static final int ESCHEDULER_WARN_TIMES_FAILOVER = 3;
@@ -205,6 +214,11 @@ public final class Constants {
      * SEMICOLON ;
      */
     public static final String SEMICOLON = ";";
+
+    /**
+     * EQUAL SIGN
+     */
+    public static final String EQUAL_SIGN = "=";
 
     /**
      * ZOOKEEPER_SESSION_TIMEOUT
@@ -250,18 +264,21 @@ public final class Constants {
      */
     public static final String SCHEDULER_TASKS_QUEUE = "tasks_queue";
 
+    /**
+     * escheduler need kill tasks queue
+     */
     public static final String SCHEDULER_TASKS_KILL = "tasks_kill";
+
     public static final String ZOOKEEPER_SCHEDULER_ROOT = "zookeeper.escheduler.root";
 
     public static final String SCHEDULER_QUEUE_IMPL = "escheduler.queue.impl";
-
-    public static final String SCHEDULER_QUEUE_REDIS_IMPL = "redis";
 
 
     /**
      * date format of yyyy-MM-dd HH:mm:ss
      */
     public static final String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
+
 
     /**
      * date format of yyyyMMddHHmmss
@@ -312,7 +329,7 @@ public final class Constants {
     /**
      * email regex
      */
-    public static final Pattern REGEX_MAIL_NAME = Pattern.compile("^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$");
+    public static final Pattern REGEX_MAIL_NAME = Pattern.compile("^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$");
 
     /**
      * read permission
@@ -453,7 +470,7 @@ public final class Constants {
     /**
      * task record configuration path
      */
-    public static final String TASK_RECORD_PROPERTIES_PATH = "dao/data_source.properties";
+    public static final String DATA_SOURCE_PROPERTIES = "dao/data_source.properties";
 
     public static final String TASK_RECORD_URL = "task.record.datasource.url";
 
@@ -463,7 +480,17 @@ public final class Constants {
 
     public static final String TASK_RECORD_PWD = "task.record.datasource.password";
 
+    public static final String DEFAULT = "Default";
+    public static final String USER = "user";
+    public static final String PASSWORD = "password";
+    public static final String XXXXXX = "******";
+
+    public static  String TASK_RECORD_TABLE_HIVE_LOG = "eamp_hive_log_hd";
+
+    public static  String TASK_RECORD_TABLE_HISTORY_HIVE_LOG = "eamp_hive_hist_log_hd";
+
     public static final String STATUS = "status";
+
 
 
     /**
@@ -602,15 +629,29 @@ public final class Constants {
     public static final String JDBC_POSTGRESQL_CLASS_NAME = "org.postgresql.Driver";
 
     /**
-     * postgresql
+     * hive
      */
     public static final String JDBC_HIVE_CLASS_NAME = "org.apache.hive.jdbc.HiveDriver";
 
     /**
-     * postgresql
+     * spark
      */
     public static final String JDBC_SPARK_CLASS_NAME = "org.apache.hive.jdbc.HiveDriver";
 
+    /**
+     * ClickHouse
+     */
+    public static final String JDBC_CLICKHOUSE_CLASS_NAME = "ru.yandex.clickhouse.ClickHouseDriver";
+
+    /**
+     * Oracle
+     */
+    public static final String JDBC_ORACLE_CLASS_NAME = "oracle.jdbc.driver.OracleDriver";
+
+    /**
+     * Oracle
+     */
+    public static final String JDBC_SQLSERVER_CLASS_NAME = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
 
     /**
      * spark params constant
@@ -812,4 +853,71 @@ public final class Constants {
     public static final String CONTENT = "content";
     public static final String DEPENDENT_SPLIT = ":||";
     public static final String DEPENDENT_ALL = "ALL";
+
+
+    /**
+     *  preview schedule execute count
+     */
+    public static final int PREVIEW_SCHEDULE_EXECUTE_COUNT = 5;
+
+    /**
+     * kerberos
+     */
+    public static final String KERBEROS = "kerberos";
+
+    /**
+     * java.security.krb5.conf
+     */
+    public static final String JAVA_SECURITY_KRB5_CONF = "java.security.krb5.conf";
+
+    /**
+     * java.security.krb5.conf.path
+     */
+    public static final String JAVA_SECURITY_KRB5_CONF_PATH = "java.security.krb5.conf.path";
+
+    /**
+     * hadoop.security.authentication
+     */
+    public static final String HADOOP_SECURITY_AUTHENTICATION = "hadoop.security.authentication";
+
+    /**
+     * hadoop.security.authentication
+     */
+    public static final String HADOOP_SECURITY_AUTHENTICATION_STARTUP_STATE = "hadoop.security.authentication.startup.state";
+
+
+    /**
+     * loginUserFromKeytab user
+     */
+    public static final String LOGIN_USER_KEY_TAB_USERNAME = "login.user.keytab.username";
+
+    /**
+     * default worker group id
+     */
+    public static final int DEFAULT_WORKER_ID = -1;
+
+    /**
+     * loginUserFromKeytab path
+     */
+    public static final String LOGIN_USER_KEY_TAB_PATH = "login.user.keytab.path";
+
+
+    /**
+     * hive conf
+     */
+    public static final String HIVE_CONF = "hiveconf:";
+
+    //flink 任务
+    public static final String FLINK_YARN_CLUSTER = "yarn-cluster";
+    public static final String FLINK_RUN_MODE = "-m";
+    public static final String FLINK_YARN_SLOT = "-ys";
+    public static final String FLINK_APP_NAME = "-ynm";
+    public static final String FLINK_TASK_MANAGE = "-yn";
+
+    public static final String FLINK_JOB_MANAGE_MEM = "-yjm";
+    public static final String FLINK_TASK_MANAGE_MEM = "-ytm";
+    public static final String FLINK_detach = "-d";
+    public static final String FLINK_MAIN_CLASS = "-c";
+
+
 }

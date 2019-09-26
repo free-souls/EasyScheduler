@@ -71,7 +71,7 @@ JSP.prototype.init = function ({ dag, instance }) {
   this.setConfig({
     isDrag: !store.state.dag.isDetails,
     isAttachment: false,
-    isNewNodes: Permissions.getAuth() === false ? false : !store.state.dag.isDetails,
+    isNewNodes: !store.state.dag.isDetails,//Permissions.getAuth() === false ? false : !store.state.dag.isDetails,
     isDblclick: true,
     isContextmenu: true,
     isClick: false
@@ -192,7 +192,8 @@ JSP.prototype.jsonHandle = function ({ largeJson, locations }) {
       y: locations[v.id]['y'],
       targetarr: locations[v.id]['targetarr'],
       isAttachment: this.config.isAttachment,
-      taskType: v.type
+      taskType: v.type,
+      runFlag: v.runFlag
     }))
 
     // contextmenu event
@@ -263,10 +264,10 @@ JSP.prototype.tasksContextmenu = function (event) {
     let isTwo = store.state.dag.isDetails
 
     let html = [
-      `<a href="javascript:" id="startRunning" class="${isOne ? '' : 'disbled'}"><i class="iconfont">&#xe60b;</i><span>${i18n.$t('开始运行')}</span></a>`,
-      `<a href="javascript:" id="editNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe601;</i><span>${i18n.$t('编辑节点')}</span></a>`,
-      `<a href="javascript:" id="copyNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe61e;</i><span>${i18n.$t('复制节点')}</span></a>`,
-      `<a href="javascript:" id="removeNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe611;</i><span>${i18n.$t('删除节点')}</span></a>`
+      `<a href="javascript:" id="startRunning" class="${isOne ? '' : 'disbled'}"><i class="iconfont">&#xe60b;</i><span>${i18n.$t('Start')}</span></a>`,
+      `<a href="javascript:" id="editNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe601;</i><span>${i18n.$t('Edit')}</span></a>`,
+      `<a href="javascript:" id="copyNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe61e;</i><span>${i18n.$t('Copy')}</span></a>`,
+      `<a href="javascript:" id="removeNodes" class="${isTwo ? 'disbled' : ''}"><i class="iconfont">&#xe611;</i><span>${i18n.$t('Delete')}</span></a>`
     ]
 
     let operationHtml = () => {
@@ -488,6 +489,9 @@ JSP.prototype.removeNodes = function ($id) {
   })
   // delete node
   this.JspInstance.remove($id)
+
+  // delete dom
+  $(`#${$id}`).remove()
 }
 
 /**
@@ -556,7 +560,7 @@ JSP.prototype.copyNodes = function ($id) {
   // Add new node
   store.commit('dag/addTasks', newNodeInfo)
   // Add node location information
-  store.commit('dag/setLocations', {
+  store.commit('dag/addLocations', {
     [newId]: {
       name: newName,
       targetarr: '',
@@ -641,6 +645,7 @@ JSP.prototype.saveStore = function () {
       })
     })
 
+
     _.map(tasksAll(), v => {
       locations[v.id] = {
         name: v.name,
@@ -649,6 +654,7 @@ JSP.prototype.saveStore = function () {
         y: v.y
       }
     })
+
 
     // Storage node
     store.commit('dag/setTasks', tasks)
@@ -667,26 +673,21 @@ JSP.prototype.saveStore = function () {
 /**
  * Event processing
  */
+
 JSP.prototype.handleEvent = function () {
   this.JspInstance.bind('beforeDrop', function (info) {
     let sourceId = info['sourceId']// 出
     let targetId = info['targetId']// 入
-
     /**
      * Recursive search for nodes
      */
     let recursiveVal
     const recursiveTargetarr = (arr, targetId) => {
-      for (var i in arr) {
+      for (let i in arr) {
         if (arr[i] === targetId) {
           recursiveVal = targetId
         } else {
-          let recTargetarrArr = rtTargetarrArr(arr[i])
-          if (recTargetarrArr.length) {
-            recursiveTargetarr(recTargetarrArr, targetId)
-          } else {
-            return recursiveTargetarr(targetId)
-          }
+          recursiveTargetarr(rtTargetarrArr(arr[i]), targetId)
         }
       }
       return recursiveVal
@@ -699,7 +700,6 @@ JSP.prototype.handleEvent = function () {
 
     // Recursive form to find if the target Targetarr has a sourceId
     if (recursiveTargetarr(rtTargetarrArr(sourceId), targetId)) {
-      // setRecursiveVal(null)
       return false
     }
 

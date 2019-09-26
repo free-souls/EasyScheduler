@@ -1,44 +1,48 @@
 <template>
-  <div class="list-model">
+  <div class="list-model" style="position: relative;">
     <div class="table-box">
       <table class="fixed">
         <tr>
-          <th>
-            <span>{{$t('编号')}}</span>
+          <th width="50">
+            <x-checkbox @on-change="_topCheckBoxClick" v-model="checkAll"></x-checkbox>
+          </th>
+          <th width="40">
+            <span>{{$t('#')}}</span>
           </th>
           <th>
-            <span>{{$t('工作流名称')}}</span>
+            <span>{{$t('Process Name')}}</span>
           </th>
-          <th width="120">
-            <span>{{$t('运行类型')}}</span>
-          </th>
-          <th width="140">
-            <span>{{$t('开始时间')}}</span>
+          <th>
+            <span>{{$t('Run Type')}}</span>
           </th>
           <th width="140">
-            <span>{{$t('结束时间')}}</span>
+            <span>{{$t('Start Time')}}</span>
           </th>
-          <th width="90">
-            <span>{{$t('运行时长(s)')}}</span>
+          <th width="140">
+            <span>{{$t('End Time')}}</span>
           </th>
-          <th width="72">
-            <span>{{$t('运行次数')}}</span>
+          <th width="70">
+            <span>{{$t('Duration')}}s</span>
+          </th>
+          <th width="70">
+            <span>{{$t('Run Times')}}</span>
           </th>
           <th width="100">
             <span>{{$t('host')}}</span>
           </th>
           <th width="70">
-            <span>{{$t('容错标识')}}</span>
+            <span>{{$t('fault-tolerant sign')}}</span>
           </th>
           <th width="50">
-            <span>{{$t('状态')}}</span>
+            <span>{{$t('State')}}</span>
           </th>
-          <th width="260">
-            <span>{{$t('操作')}}</span>
+          <th width="220">
+            <span>{{$t('Operation')}}</span>
           </th>
         </tr>
         <tr v-for="(item, $index) in list" :key="item.id">
-          <td>
+          <td width="50"><x-checkbox v-model="item.isCheck" @on-change="_arrDelChange"></x-checkbox></td>
+          <td width="50">
             <span>{{parseInt(pageNo === 1 ? ($index + 1) : (($index + 1) + (pageSize * (pageNo - 1))))}}</span>
           </td>
           <td>
@@ -50,8 +54,8 @@
             <span v-if="item.endTime">{{item.endTime | formatDate}}</span>
             <span v-if="!item.endTime">-</span>
           </td>
-          <td><span>{{item.duration || '-'}}</span></td>
-          <td><span>{{item.runTimes}}</span></td>
+          <td width="70"><span>{{item.duration || '-'}}</span></td>
+          <td width="70"><span>{{item.runTimes}}</span></td>
           <td>
             <span v-if="item.host">{{item.host}}</span>
             <span v-if="!item.host">-</span>
@@ -67,55 +71,50 @@
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('编辑')"
+                        :title="$t('Edit')"
                         @click="_reEdit(item)"
-                        v-ps="['GENERAL_USER']"
                         icon="iconfont icon-bianjixiugai"
-                        :disabled="item.state !== 'SUCCESS' && item.state !== 'PAUSE' && item.state !== 'FAILURE' && item.state !== 'STOP'"><!--{{$t('编辑')}}--></x-button>
+                        :disabled="item.state !== 'SUCCESS' && item.state !== 'PAUSE' && item.state !== 'FAILURE' && item.state !== 'STOP'"></x-button>
               <x-button type="info"
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('重跑')"
+                        :title="$t('Rerun')"
                         @click="_reRun(item,$index)"
-                        v-ps="['GENERAL_USER']"
                         icon="iconfont icon-shuaxin"
-                        :disabled="item.state !== 'SUCCESS' && item.state !== 'PAUSE' && item.state !== 'FAILURE' && item.state !== 'STOP'"><!--{{$t('重跑')}}--></x-button>
+                        :disabled="item.state !== 'SUCCESS' && item.state !== 'PAUSE' && item.state !== 'FAILURE' && item.state !== 'STOP'"></x-button>
               <x-button type="success"
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('恢复失败')"
+                        :title="$t('Recovery Failed')"
                         @click="_restore(item,$index)"
-                        v-ps="['GENERAL_USER']"
                         icon="iconfont icon-cuowuguanbishibai"
-                        :disabled="item.state !== 'FAILURE'"><!--{{$t('恢复失败')}}--></x-button>
+                        :disabled="item.state !== 'FAILURE'"></x-button>
               <x-button type="error"
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('停止')"
-                        @click="_stop(item)"
-                        v-ps="['GENERAL_USER']"
-                        icon="iconfont icon-zanting1"
-                        :disabled="item.state !== 'RUNNING_EXEUTION'"><!--{{$t('停止')}}--></x-button>
+                        :title="item.state === 'STOP' ? $t('Recovery Suspend') : $t('Stop')"
+                        @click="_stop(item,$index)"
+                        :icon="item.state === 'STOP' ? 'iconfont icon-ai06' : 'iconfont icon-zanting'"
+                        :disabled="item.state !== 'RUNNING_EXEUTION' && item.state != 'STOP'"></x-button>
               <x-button type="warning"
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="item.state === 'PAUSE' ? $t('恢复暂停') : $t('暂停')"
+                        :title="item.state === 'PAUSE' ? $t('Recovery Suspend') : $t('Pause')"
                         @click="_suspend(item,$index)"
-                        v-ps="['GENERAL_USER']"
-                        :icon="item.state === 'PAUSE' ? 'iconfont icon-ai06' : 'iconfont icon-zanting'"
-                        :disabled="item.state !== 'RUNNING_EXEUTION' && item.state !== 'PAUSE'"><!--{{item.state === 'PAUSE' ? $t('恢复暂停') : $t('暂停')}}--></x-button>
+                        :icon="item.state === 'PAUSE' ? 'iconfont icon-ai06' : 'iconfont icon-zanting1'"
+                        :disabled="item.state !== 'RUNNING_EXEUTION' && item.state !== 'PAUSE'"></x-button>
               <x-poptip
                       :ref="'poptip-delete-' + $index"
                       placement="bottom-end"
                       width="90">
-                <p>{{$t('确定删除吗?')}}</p>
+                <p>{{$t('Delete?')}}</p>
                 <div style="text-align: right; margin: 0;padding-top: 4px;">
-                  <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('取消')}}</x-button>
-                  <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('确定')}}</x-button>
+                  <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete($index)">{{$t('Cancel')}}</x-button>
+                  <x-button type="primary" size="xsmall" shape="circle" @click="_delete(item,$index)">{{$t('Confirm')}}</x-button>
                 </div>
                 <template slot="reference">
                   <x-button
@@ -124,8 +123,8 @@
                           shape="circle"
                           size="xsmall"
                           data-toggle="tooltip"
-                          :title="$t('删除')"
-                          v-ps="['GENERAL_USER']">
+                          :disabled="item.state === 'RUNNING_EXEUTION'"
+                          :title="$t('delete')">
                   </x-button>
                 </template>
               </x-poptip>
@@ -134,15 +133,14 @@
                         shape="circle"
                         size="xsmall"
                         data-toggle="tooltip"
-                        :title="$t('甘特图')"
+                        :title="$t('Gantt')"
                         @click="_gantt(item)"
                         icon="iconfont icon-gantt">
-                <!--{{$t('甘特图')}}-->
               </x-button>
 
             </div>
             <div v-show="!item.disabled">
-              <!--编辑-->
+              <!--Edit-->
               <x-button
                       type="info"
                       shape="circle"
@@ -151,14 +149,14 @@
                       disabled="true">
               </x-button>
 
-              <!--重跑-->
+              <!--Rerun-->
               <x-button
                       v-show="buttonType === 'run'"
                       type="info"
                       shape="circle"
                       size="xsmall"
                       disabled="true">
-                {{item.count}}s
+                {{item.count}}
               </x-button>
               <x-button
                       v-show="buttonType !== 'run'"
@@ -169,14 +167,14 @@
                       disabled="true">
               </x-button>
 
-              <!--恢复失败-->
+              <!--Recovery Failed-->
               <x-button
                       v-show="buttonType === 'store'"
                       type="success"
                       shape="circle"
                       size="xsmall"
                       disabled="true">
-                {{item.count}}s
+                {{item.count}}
               </x-button>
               <x-button
                       v-show="buttonType !== 'store'"
@@ -187,36 +185,45 @@
                       disabled="true">
               </x-button>
 
-              <!--停止-->
-              <x-button
-                      type="error"
-                      shape="circle"
-                      size="xsmall"
-                      icon="iconfont icon-zanting1"
-                      disabled="true">
-              </x-button>
+              <!--Stop-->
+              <!--<x-button-->
+                      <!--type="error"-->
+                      <!--shape="circle"-->
+                      <!--size="xsmall"-->
+                      <!--icon="iconfont icon-zanting1"-->
+                      <!--disabled="true">-->
+              <!--</x-button>-->
 
-              <!--倒计时 => 恢复暂停/暂停-->
+              <!--倒计时 => Recovery Suspend/Pause-->
               <x-button
-                      v-show="item.state === 'PAUSE' && buttonType === 'suspend'"
+                      v-show="(item.state === 'PAUSE' || item.state == 'STOP') && buttonType === 'suspend'"
                       type="warning"
                       shape="circle"
                       size="xsmall"
                       disabled="true">
-                {{item.count}}s
+                {{item.count}}
               </x-button>
-              <!--恢复暂停-->
+              <!--Recovery Suspend-->
               <x-button
-                      v-show="item.state === 'PAUSE' && buttonType !== 'suspend'"
+                      v-show="(item.state === 'PAUSE' || item.state == 'STOP') && buttonType !== 'suspend'"
                       type="warning"
                       shape="circle"
                       size="xsmall"
                       icon="iconfont icon-ai06"
                       disabled="true">
               </x-button>
-              <!--暂停-->
+              <!--Pause-->
               <x-button
                       v-show="item.state !== 'PAUSE'"
+                      type="warning"
+                      shape="circle"
+                      size="xsmall"
+                      icon="iconfont icon-zanting1"
+                      disabled="true">
+              </x-button>
+            <!--Stop-->
+              <x-button
+                      v-show="item.state !== 'STOP'"
                       type="warning"
                       shape="circle"
                       size="xsmall"
@@ -224,7 +231,7 @@
                       disabled="true">
               </x-button>
 
-              <!--删除-->
+              <!--delete-->
               <x-button
                       type="error"
                       shape="circle"
@@ -233,7 +240,7 @@
                       :disabled="true">
               </x-button>
 
-              <!--甘特图-->
+              <!--Gantt-->
               <x-button
                       type="info"
                       shape="circle"
@@ -246,12 +253,25 @@
         </tr>
       </table>
     </div>
+    <x-poptip
+            v-show="strDelete !== ''"
+            ref="poptipDeleteAll"
+            placement="bottom-start"
+            width="90">
+      <p>{{$t('Delete?')}}</p>
+      <div style="text-align: right; margin: 0;padding-top: 4px;">
+        <x-button type="text" size="xsmall" shape="circle" @click="_closeDelete(-1)">{{$t('Cancel')}}</x-button>
+        <x-button type="primary" size="xsmall" shape="circle" @click="_delete({},-1)">{{$t('Confirm')}}</x-button>
+      </div>
+      <template slot="reference">
+        <x-button size="xsmall" style="position: absolute; bottom: -48px; left: 22px;" >{{$t('Delete')}}</x-button>
+      </template>
+    </x-poptip>
   </div>
 </template>
 <script>
   import _ from 'lodash'
   import { mapActions } from 'vuex'
-  import '@/module/filter/formatDate'
   import { tasksState, runningType } from '@/conf/home/pages/dag/_source/config'
 
   export default {
@@ -261,7 +281,9 @@
         // 数据
         list: [],
         // 按钮类型
-        buttonType: ''
+        buttonType: '',
+        strDelete: '',
+        checkAll: false
       }
     },
     props: {
@@ -270,7 +292,7 @@
       pageSize: Number
     },
     methods: {
-      ...mapActions('dag', ['editExecutorsState', 'deleteInstance']),
+      ...mapActions('dag', ['editExecutorsState', 'deleteInstance', 'batchDeleteInstance']),
       /**
        * Return run type
        */
@@ -288,12 +310,22 @@
        * Close the delete layer
        */
       _closeDelete (i) {
-        this.$refs[`poptip-delete-${i}`][0].doClose()
+        if (i > 0) {
+          this.$refs[`poptip-delete-${i}`][0].doClose()
+        }else{
+          this.$refs['poptipDeleteAll'].doClose()
+        }
       },
       /**
        * delete
        */
       _delete (item, i) {
+        // remove tow++
+        if (i < 0) {
+          this._batchDelete()
+          return
+        }
+        // remove one
         this.deleteInstance({
           processInstanceId: item.id
         }).then(res => {
@@ -340,11 +372,20 @@
        * stop
        * @param STOP
        */
-      _stop (item) {
-        this._upExecutorsState({
-          processInstanceId: item.id,
-          executeType: 'STOP'
-        })
+      _stop (item, index) {
+        if(item.state == 'STOP') {
+          this._countDownFn({
+            id: item.id,
+            executeType: 'RECOVER_SUSPENDED_PROCESS',
+            index: index,
+            buttonType: 'suspend'
+          })
+        } else {
+          this._upExecutorsState({
+            processInstanceId: item.id,
+            executeType: 'STOP'
+          })
+        }
       },
       /**
        * pause
@@ -361,7 +402,7 @@
         } else {
           this._upExecutorsState({
             processInstanceId: item.id,
-            executeType: item.state === 'PAUSE' ? 'RECOVER_SUSPENDED_PROCESS' : 'PAUSE'
+            executeType: 'PAUSE'
           })
         }
       },
@@ -413,7 +454,7 @@
         if (data.length) {
           _.map(data, v => {
             v.disabled = true
-            v.count = 10
+            v.count = 9
           })
         }
         return data
@@ -442,20 +483,58 @@
       },
       _gantt (item) {
         this.$router.push({ path: `/projects/instance/gantt/${item.id}` })
+      },
+      _topCheckBoxClick (v) {
+        this.list.forEach((item, i) => {
+          this.$set(this.list[i], 'isCheck', v)
+        })
+        this._arrDelChange()
+      },
+      _arrDelChange (v) {
+        let arr = []
+        this.list.forEach((item)=>{
+          if (item.isCheck) {
+            arr.push(item.id)
+          }
+        })
+        this.strDelete = _.join(arr, ',')
+        if (v === false) {
+          this.checkAll = false
+        }
+      },
+      _batchDelete () {
+        this.$refs['poptipDeleteAll'].doClose()
+        this.batchDeleteInstance({
+          processInstanceIds: this.strDelete
+        }).then(res => {
+          this._onUpdate()
+          this.checkAll = false
+          this.$message.success(res.msg)
+        }).catch(e => {
+          this.checkAll = false
+          this.$message.error(e.msg || '')
+        })
       }
     },
     watch: {
-      processInstanceList (a) {
-        this.list = []
-        setTimeout(() => {
-          this.list = this._listDataHandle(a)
-        })
+      processInstanceList: {
+        handler (a) {
+          this.checkAll = false
+          this.list = []
+          setTimeout(() => {
+            this.list = _.cloneDeep(this._listDataHandle(a))
+          })
+        },
+        immediate: true,
+        deep: true
+      },
+      pageNo () {
+        this.strDelete = ''
       }
     },
     created () {
     },
     mounted () {
-      this.list = this._listDataHandle(this.processInstanceList)
     },
     components: { }
   }
